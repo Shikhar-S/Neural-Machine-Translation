@@ -72,16 +72,16 @@ class Vocab:
             self.trg_itos[v]=k
 
 class DataReader(IterableDataset):
-    def __init__(self,paths,src_preprocessor,trg_preprocessor,DIC=None):
+    def __init__(self,args,paths,src_preprocessor,trg_preprocessor,DIC=None):
         self.src_path = paths[0]
         self.trg_path = paths[1]
         
         self.vocab = Vocab()
         if DIC is None:
             src_dic = self.vocab.build_dic(self.src_path,src_preprocessor)
-            logger.info('Built source dictionary')
+            logger.info('Built source dictionary',extra=args.exec_id)
             trg_dic = self.vocab.build_dic(self.trg_path,trg_preprocessor)
-            logger.info('Built target dictionary')
+            logger.info('Built target dictionary',extra=args.exec_id)
             self.vocab.add_src_dic(src_dic)
             self.vocab.add_trg_dic(trg_dic)
         else:

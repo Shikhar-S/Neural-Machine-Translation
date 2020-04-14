@@ -136,9 +136,9 @@ def translation_mode(args):
 
 def train_mode(args):
     #Get Data
-    training_dataset = DataReader(args.validation_data,en_preprocessor,hi_preprocessor)
-    validation_dataset = DataReader(args.validation_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
-    # testing_dataset = DataReader(args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
+    training_dataset = DataReader(args,args.validation_data,en_preprocessor,hi_preprocessor)
+    validation_dataset = DataReader(args,args.validation_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
+    # testing_dataset = DataReader(args,args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     
     INPUT_DIM = len(training_dataset.vocab.src_stoi)
     OUTPUT_DIM = len(training_dataset.vocab.trg_stoi)
