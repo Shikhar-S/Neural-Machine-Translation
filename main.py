@@ -4,7 +4,7 @@ import torch
 import time
 import torch.optim as optim
 import torch.nn as nn
-from datareader import DataReader, en_preprocessor, hi_preprocessor, collator
+from datareader import DataReader, en_preprocessor, hi_preprocessor, collator, Vocab
 from models.seq2seq import Seq2Seq
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -123,7 +123,7 @@ def display_attention(candidate, translation, attention):
 
 def translation_mode(args):
     vocab=None
-    with open(args.dic_load_path, 'rb') as F:
+    with open(args.load_dic_path, 'rb') as F:
         vocab = pickle.load(F)
 
     INPUT_DIM = len(vocab.src_stoi)
@@ -187,7 +187,7 @@ def train_mode(args):
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), args.save_model_path)
             with open(args.save_dic_path,'wb') as F:
-                pickle.dump(training_dataset.vocab,F)
+                pickle.dump(training_dataset.vocab.src_stoi,F)
         
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')

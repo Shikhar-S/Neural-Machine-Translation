@@ -34,32 +34,38 @@ def collator(batch,PAD_IDX):
 class Vocab:
     def __init__(self,src_dic=None,trg_dic=None):
         self.src_stoi = src_dic
-        self.src_itos = defaultdict(lambda : '<UNK>')
-        
+        self.src_itos = defaultdict(self.ret_unk)
+       
         if self.src_stoi is not None:
             for k,v in self.src_stoi.items():
                 self.src_itos[v]=k
 
         self.trg_stoi = trg_dic
-        self.trg_itos = defaultdict(lambda : '<UNK>')
+        self.trg_itos = defaultdict(self.ret_unk)
         
         if self.trg_stoi is not None:
             for k,v in self.trg_stoi.items():
                 self.trg_itos[v]=k
-
+    
+    def ret_z(self):
+        return 0
+    def ret_unk(self):
+        return '<UNK>'
+    
     def build_dic(self,path,preprocessor):
-            dic=defaultdict(lambda : 0)
-            dic['<sos>']=1
-            dic['<eos>']=2
-            dic['<pad>']=3
-            ctr =  4
-            with open(path,'r') as F:
-                for line in F:
-                    for token in preprocessor(line):
-                        if token not in dic:
-                            dic[token]=ctr
-                            ctr+=1
-            return dic
+        
+        dic=defaultdict(self.ret_z)
+        dic['<sos>']=1
+        dic['<eos>']=2
+        dic['<pad>']=3
+        ctr =  4
+        with open(path,'r') as F:
+            for line in F:
+                for token in preprocessor(line):
+                    if token not in dic:
+                        dic[token]=ctr
+                        ctr+=1
+        return dic
     
     def add_src_dic(self,dic):
         self.src_stoi = dic
@@ -117,11 +123,12 @@ class DataReader(IterableDataset):
         
         return zipped_itr
 
-#TEST
-
-# test_dataset = DataReader('./Data/dev_test/dev.en','./Data/dev_test/dev.hi',en_preprocessor,hi_preprocessor)
+# #TEST
+# import config
+# args,unparsed = config.get_args()
+# test_dataset = DataReader(args,('./Data/dev_test/dev.en','./Data/dev_test/dev.hi'),en_preprocessor,hi_preprocessor)
 # print('built vocab')
-# dataloader = DataLoader(test_dataset, batch_size = 2, drop_last=True, collate_fn=lambda b: collator(b,3))
+# dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3))
 
 # for X, y in dataloader:
 #     print(X)
