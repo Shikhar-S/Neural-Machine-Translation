@@ -116,7 +116,7 @@ def display_attention(candidate, translation, attention):
 def train_model(args):
     #Get Data
     training_dataset = DataReader(args.validation_data,en_preprocessor,hi_preprocessor)
-    validation_dataset = DataReader(args.validatioin_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
+    validation_dataset = DataReader(args.validation_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     # testing_dataset = DataReader(args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     
     INPUT_DIM = len(training_dataset.vocab.src_stoi)
