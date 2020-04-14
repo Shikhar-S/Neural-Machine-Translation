@@ -14,7 +14,7 @@ import pickle
 
 logger = utils.get_logger()
 
-def train(model, iterator, optimizer, criterion, clip):
+def train(model, iterator, optimizer, criterion, clip, device):
     
     model.train()
     
@@ -24,7 +24,10 @@ def train(model, iterator, optimizer, criterion, clip):
         
         src, src_len = batch[0]
         trg = batch[1]
-        
+        src=src.to(device)
+        src_len=src_len.to(device)
+        trg = trg.to(device)
+
         optimizer.zero_grad()
         
         output, _ = model(src, src_len, trg)
@@ -50,7 +53,7 @@ def train(model, iterator, optimizer, criterion, clip):
         batch_ctr+=1
     return epoch_loss / batch_ctr
 
-def evaluate(model, iterator, criterion):
+def evaluate(model, iterator, criterion, device):
     
     model.eval()
     
@@ -62,6 +65,10 @@ def evaluate(model, iterator, criterion):
 
             src, src_len = batch[0]
             trg = batch[1]
+
+            src=src.to(device)
+            src_len=src_len.to(device)
+            trg = trg.to(device)
 
             output, _ = model(src, src_len, trg, 0) #turn off teacher forcing
 
@@ -169,8 +176,8 @@ def train_mode(args):
     for epoch in range(N_EPOCHS): 
         start_time = time.time()
         
-        train_loss = train(model, training_dataloader, optimizer, criterion, CLIP)
-        valid_loss = evaluate(model, validation_dataloader, criterion)
+        train_loss = train(model, training_dataloader, optimizer, criterion, CLIP, device)
+        valid_loss = evaluate(model, validation_dataloader, criterion, device)
         
         end_time = time.time()
         
