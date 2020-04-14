@@ -10,6 +10,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import pickle
 
 logger = utils.get_logger()
 
@@ -19,7 +20,7 @@ def train(model, iterator, optimizer, criterion, clip):
     
     epoch_loss = 0
     batch_ctr=0
-    for i, batch in enumerate(tqdm(iterator)):
+    for batch in tqdm(iterator):
         
         src, src_len = batch[0]
         trg = batch[1]
@@ -57,7 +58,7 @@ def evaluate(model, iterator, criterion):
     batch_ctr=0
     with torch.no_grad():
     
-        for i, batch in enumerate(tqdm(iterator)):
+        for batch in tqdm(iterator):
 
             src, src_len = batch[0]
             trg = batch[1]
@@ -113,7 +114,27 @@ def display_attention(candidate, translation, attention):
     plt.show()
     plt.close()
 
-def train_model(args):
+def translation_mode(args):
+    vocab=None
+    with open(args.dic_load_path, 'rb') as F:
+        vocab = pickle.load(F)
+
+    INPUT_DIM = len(vocab.src_stoi)
+    OUTPUT_DIM = len(vocab.trg_stoi)
+    PAD_IDX = vocab.src_stoi['<pad>']
+    SOS_IDX = vocab.src_stoi['<sos>']
+    EOS_IDX = vocab.src_stoi['<eos>']
+    device = utils.get_device(args)
+
+    model = Seq2Seq(args,INPUT_DIM,OUTPUT_DIM, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model.load_state_dict(torch.load(args.load_model_path))
+
+    sentence=input('Enter sentence in source language')
+    translation,attention = translate_sentence(model,vocab,sentence,args)
+    print('Translated: ',' '.join(translation.join))
+    display_attention(sentence,translation,attention)    
+
+def train_mode(args):
     #Get Data
     training_dataset = DataReader(args.validation_data,en_preprocessor,hi_preprocessor)
     validation_dataset = DataReader(args.validation_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
@@ -134,10 +155,11 @@ def train_model(args):
 
     #Get model
     model = Seq2Seq(args,INPUT_DIM,OUTPUT_DIM, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
-
+    logger.info(model.apply(utils.init_weights),extra=args.exec_id) #init model
+    logger.info("Number of trainable parameters: "+str(utils.count_parameters(model)),extra=args.exec_id) #log Param count
 
     #Train and Evaluate model
-    N_EPOCHS = 10
+    N_EPOCHS = args.epochs
     CLIP = 1
     best_valid_loss = float('inf')
 
@@ -156,7 +178,9 @@ def train_model(args):
         
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
-            torch.save(model.state_dict(), args.save_model)
+            torch.save(model.state_dict(), args.save_model_path)
+            with open(args.save_dic_path,'wb') as F:
+                pickle.dump(training_dataset.vocab,F)
         
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
@@ -166,4 +190,7 @@ if __name__ == '__main__':
     args,unparsed = config.get_args()
     if len(unparsed)>0:
         logger.warning('Unparsed args: %s',unparsed)
-    train_model(args)
+    if args.translate:
+        translation_mode(args)
+    elif args.train:
+        train_mode(args)

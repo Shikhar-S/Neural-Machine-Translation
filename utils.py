@@ -1,5 +1,6 @@
 import logging
 import torch
+import torch.nn as nn
 
 def get_logger(name=__file__, level=logging.INFO,filename='log/seq_to_seq.log'):    
     logger = logging.getLogger(name)
@@ -39,3 +40,13 @@ def get_device(args):
     
     args.device=device
     return device
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+def init_weights(m):
+    for name, param in m.named_parameters():
+        if 'weight' in name:
+            nn.init.normal_(param.data, mean=0, std=0.01)
+        else:
+            nn.init.constant_(param.data, 0)

@@ -1,2 +1,31 @@
-2020-04-14 12:57:50,476||1586849269388897||INFO||Parsed arguments
-2020-04-14 12:58:28,904||158684930809329||INFO||Parsed arguments
+2020-04-14 14:29:44,135||1586854783190113||INFO||__INIT__
+2020-04-14 14:29:44,135||1586854783190113||INFO||Argument batch: 16
+2020-04-14 14:29:44,135||1586854783190113||INFO||Argument decoder_dim: 512
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument device: 'auto'
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument encoder_dim: 512
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument epochs: 10
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument exec_id: {'run': '1586854783190113'}
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument input_embedding_dim: 128
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument output_embedding_dim: 128
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument save_model: './trained_models/seq2seq.pt'
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument testing_data: ('./Data/dev_test/test.en', './Data/dev_test/test.hi')
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument train: True
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument train_split: 0.95
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument training_data: ('./Data/parallel/IITB.en-hi.en', './Data/parallel/IITB.en-hi.hi')
+2020-04-14 14:29:44,136||1586854783190113||INFO||Argument validation_data: ('./Data/dev_test/dev.en', './Data/dev_test/dev.hi')
+2020-04-14 14:29:44,669||1586854783190113||INFO||Seq2Seq(
+  (encoder): Encoder(
+    (embedding_layer): Embedding(2642, 128)
+    (rnn): GRU(128, 512, bidirectional=True)
+    (forward_net): Linear(in_features=1024, out_features=512, bias=True)
+  )
+  (decoder): Decoder(
+    (embedding_layer): Embedding(2630, 128)
+    (f): GRU(1152, 512)
+    (g): Linear(in_features=1664, out_features=2630, bias=True)
+    (attention): Attention(
+      (a): Linear(in_features=1536, out_features=512, bias=True)
+    )
+  )
+)
+2020-04-14 14:29:44,672||1586854783190113||INFO||Number of trainable parameters: 10897222
