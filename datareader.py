@@ -53,7 +53,6 @@ class Vocab:
         return '<UNK>'
     
     def build_dic(self,path,preprocessor):
-        
         dic=defaultdict(self.ret_z)
         dic['<sos>']=1
         dic['<eos>']=2

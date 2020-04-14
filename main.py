@@ -143,7 +143,7 @@ def translation_mode(args):
 
 def train_mode(args):
     #Get Data
-    training_dataset = DataReader(args,args.validation_data,en_preprocessor,hi_preprocessor)
+    training_dataset = DataReader(args,args.training_data,en_preprocessor,hi_preprocessor)
     validation_dataset = DataReader(args,args.validation_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     # testing_dataset = DataReader(args,args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     
