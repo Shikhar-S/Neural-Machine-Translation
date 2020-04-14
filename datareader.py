@@ -3,6 +3,9 @@ from torch.utils.data import DataLoader
 from collections import defaultdict
 import torch
 from indicnlp.tokenize import indic_tokenize
+import utils
+
+logger = utils.get_logger()
 
 def en_preprocessor(text):
     return [t.lower().replace('.','') for t in text.split()]
@@ -76,9 +79,9 @@ class DataReader(IterableDataset):
         self.vocab = Vocab()
         if DIC is None:
             src_dic = self.vocab.build_dic(self.src_path,src_preprocessor)
-            print('src b')
+            logger.info('Built source dictionary')
             trg_dic = self.vocab.build_dic(self.trg_path,trg_preprocessor)
-            print('target b')
+            logger.info('Built target dictionary')
             self.vocab.add_src_dic(src_dic)
             self.vocab.add_trg_dic(trg_dic)
         else:
