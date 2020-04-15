@@ -32,12 +32,13 @@ def epoch_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 def get_device(args):
+    if args.device not in ['gpu','cpu','auto']:
+        return args.device
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if(args.device == 'gpu' and not torch.cuda.is_available()):
         logger.error('Backend device: %s not available',args.device)
     if args.device != 'auto':
         device = torch.device('cpu'  if args.device=='cpu' else 'cuda')
-    
     args.device=device
     return device
 
