@@ -58,7 +58,7 @@ class Vocab:
         dic['<eos>']=2
         dic['<pad>']=3
         ctr =  4
-        with open(path,'r') as F:
+        with open(path,'r',encoding='UTF-8') as F:
             for line in F:
                 for token in preprocessor(line):
                     if token not in dic:
@@ -110,8 +110,8 @@ class DataReader(IterableDataset):
 
     def __iter__(self):
         #Create an iterator
-        src_itr = open(self.src_path)
-        trg_itr = open(self.trg_path)
+        src_itr = open(self.src_path,encoding='UTF-8')
+        trg_itr = open(self.trg_path,encoding='UTF-8')
         
         #Map each element using the line_mapper
         mapped_src_itr = map(lambda text : self.line_mapper(text,True), src_itr)
