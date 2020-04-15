@@ -14,8 +14,8 @@ import pickle
 
 logger = utils.get_logger()
 
-def train(model, iterator, optimizer, criterion, clip, device):
-    
+def train(model, iterator, optimizer, criterion, clip, args):
+    device=utils.get_device(args)
     model.train()
     
     epoch_loss = 0
@@ -51,10 +51,10 @@ def train(model, iterator, optimizer, criterion, clip, device):
         
         epoch_loss += loss.item()
         batch_ctr+=1
-    return epoch_loss / batch_ctr
+    return epoch_loss / (batch_ctr*args.batch)
 
-def evaluate(model, iterator, criterion, device):
-    
+def evaluate(model, iterator, criterion, args):
+    device=utils.get_device(args)
     model.eval()
     
     epoch_loss = 0
@@ -86,7 +86,7 @@ def evaluate(model, iterator, criterion, device):
             epoch_loss += loss.item()
             batch_ctr+=1
         
-    return epoch_loss / batch_ctr
+    return epoch_loss / (batch_ctr*args.batch)
 
 def translate_sentence(model,vocab,sentence,args):
     model.eval()
@@ -176,8 +176,8 @@ def train_mode(args):
     for epoch in range(N_EPOCHS): 
         start_time = time.time()
         
-        train_loss = train(model, training_dataloader, optimizer, criterion, CLIP, device)
-        valid_loss = evaluate(model, validation_dataloader, criterion, device)
+        train_loss = train(model, training_dataloader, optimizer, criterion, CLIP, args)
+        valid_loss = evaluate(model, validation_dataloader, criterion, args)
         
         end_time = time.time()
         
