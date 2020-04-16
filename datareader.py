@@ -13,11 +13,11 @@ def en_preprocessor(text):
 def hi_preprocessor(text):
     return [token for token in indic_tokenize.trivial_tokenize(text)]
 
-def collator(batch,PAD_IDX):
-    max_src_len = max_trg_len = 0
-    for x,y in batch:
-        max_src_len = max(max_src_len,len(x))
-        max_trg_len = max(max_trg_len,len(y))
+def collator(batch,PAD_IDX,max_src_len,max_trg_len):
+    # max_src_len = max_trg_len = 0
+    # for x,y in batch:
+    #     max_src_len = max(max_src_len,len(x))
+    #     max_trg_len = max(max_trg_len,len(y))
     X=[]
     X_len= []
     Y=[]
@@ -32,10 +32,12 @@ def collator(batch,PAD_IDX):
     return (X,X_len),Y
 
 class Vocab:
-    def __init__(self,src_dic=None,trg_dic=None):
+    def __init__(self,src_dic=None,trg_dic=None,src_max_len=None,trg_max_len=None):
         self.src_stoi = src_dic
         self.src_itos = defaultdict(self.ret_unk)
-       
+        self.src_max_len=src_max_len
+        self.trg_max_len=trg_max_len
+
         if self.src_stoi is not None:
             for k,v in self.src_stoi.items():
                 self.src_itos[v]=k
@@ -54,25 +56,30 @@ class Vocab:
     
     def build_dic(self,path,preprocessor):
         dic=defaultdict(self.ret_z)
+        max_len=0
         dic['<sos>']=1
         dic['<eos>']=2
         dic['<pad>']=3
         ctr =  4
         with open(path,'r',encoding='UTF-8') as F:
             for line in F:
-                for token in preprocessor(line):
+                tokens=preprocessor(line)
+                max_len=max(max_len,len(tokens))
+                for token in tokens:
                     if token not in dic:
                         dic[token]=ctr
                         ctr+=1
-        return dic
+        return dic,max_len
     
-    def add_src_dic(self,dic):
+    def add_src_dic(self,dic,length):
         self.src_stoi = dic
+        self.src_max_len=length
         for k,v in self.src_stoi.items():
             self.src_itos[v]=k
     
-    def add_trg_dic(self,dic):
+    def add_trg_dic(self,dic,length):
         self.trg_stoi = dic
+        self.trg_max_len=length
         for k,v in self.trg_stoi.items():
             self.trg_itos[v]=k
 
@@ -83,12 +90,12 @@ class DataReader(IterableDataset):
         
         self.vocab = Vocab()
         if DIC is None:
-            src_dic = self.vocab.build_dic(self.src_path,src_preprocessor)
+            src_dic,src_max_len = self.vocab.build_dic(self.src_path,src_preprocessor)
             logger.info('Built source dictionary',extra=args.exec_id)
-            trg_dic = self.vocab.build_dic(self.trg_path,trg_preprocessor)
+            trg_dic,trg_max_len = self.vocab.build_dic(self.trg_path,trg_preprocessor)
             logger.info('Built target dictionary',extra=args.exec_id)
-            self.vocab.add_src_dic(src_dic)
-            self.vocab.add_trg_dic(trg_dic)
+            self.vocab.add_src_dic(src_dic,src_max_len)
+            self.vocab.add_trg_dic(trg_dic,trg_max_len)
         else:
             self.vocab=DIC
         
@@ -126,11 +133,15 @@ class DataReader(IterableDataset):
 # import config
 # args,unparsed = config.get_args()
 # test_dataset = DataReader(args,('./Data/dev_test/dev.en','./Data/dev_test/dev.hi'),en_preprocessor,hi_preprocessor)
-# print('built vocab')
-# dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3))
+# print('built vocab',test_dataset.vocab.trg_max_len,test_dataset.vocab.src_max_len)
+# dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3,62,62))
 
+# ctr=0
 # for X, y in dataloader:
+#     ctr+=1
 #     print(X)
-#     print()
+#     print('-----')
 #     print(y)
-#     break
+#     print(('#################'))
+#     if ctr==2:
+#         break
