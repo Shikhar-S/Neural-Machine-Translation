@@ -161,9 +161,11 @@ def train_mode(args):
     PAD_IDX = training_dataset.vocab.src_stoi['<pad>']
     SOS_IDX = training_dataset.vocab.src_stoi['<sos>']
     EOS_IDX = training_dataset.vocab.src_stoi['<eos>']
-
-    training_dataloader = DataLoader(training_dataset, batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX))
-    validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX))
+    TRG_MAX_LEN = training_dataset.vocab.trg_max_len
+    SRC_MAX_LEN = training_dataset.vocab.src_max_len
+    print(TRG_MAX_LEN,SRC_MAX_LEN)
+    training_dataloader = DataLoader(training_dataset, batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))
+    validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))
     # testing_dataloader = DataLoader(testing_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX))
 
     #Get model
