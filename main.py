@@ -147,10 +147,13 @@ def translation_mode(args):
 
 def train_mode(args):
     #Get Data
-    utils.memReport()
-    utils.cpuStats()
-    training_dataset = DataReader(args,args.training_data,en_preprocessor,hi_preprocessor)
-    validation_dataset = DataReader(args,args.validation_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
+    TRG_MAX_LEN = args.trg_max_len
+    SRC_MAX_LEN = args.src_max_len
+    preprocessors=(en_preprocessor,hi_preprocessor)
+    lengths=(SRC_MAX_LEN,TRG_MAX_LEN)
+    
+    training_dataset = DataReader(args,args.training_data,preprocessors)
+    validation_dataset = DataReader(args,args.validation_data,preprocessors,training_dataset.vocab)
     # testing_dataset = DataReader(args,args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     
     INPUT_DIM = len(training_dataset.vocab.src_stoi)
@@ -161,8 +164,7 @@ def train_mode(args):
     PAD_IDX = training_dataset.vocab.src_stoi['<pad>']
     SOS_IDX = training_dataset.vocab.src_stoi['<sos>']
     EOS_IDX = training_dataset.vocab.src_stoi['<eos>']
-    TRG_MAX_LEN = training_dataset.vocab.trg_max_len
-    SRC_MAX_LEN = training_dataset.vocab.src_max_len
+    
     print(TRG_MAX_LEN,SRC_MAX_LEN)
     training_dataloader = DataLoader(training_dataset, batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))
     validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))

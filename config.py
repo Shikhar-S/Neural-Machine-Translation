@@ -38,6 +38,8 @@ parser.add_argument('--train',type=str2bool,default='false')
 parser.add_argument('--translate',type=str2bool,default='false')
 parser.add_argument('--load_model_path',type=str,default='./trained_models/seq2seq.pt')
 parser.add_argument('--load_dic_path',type=str,default='./trained_models/dictionary.pkl')
+parser.add_argument('--src_max_len',type=int,default=50)
+parser.add_argument('--trg_max_len',type=int,default=50)
 
 def get_args():
     args,unparsed = parser.parse_known_args()

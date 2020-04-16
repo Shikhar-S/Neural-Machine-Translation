@@ -22,9 +22,9 @@ def collator(batch,PAD_IDX,max_src_len,max_trg_len):
     X_len= []
     Y=[]
     for x,y in batch:
-        X.append(x+[PAD_IDX for i in range(max_src_len-len(x))])
-        X_len.append(len(x))
-        Y.append(y+[PAD_IDX for i in range(max_trg_len-len(y))])
+        X.append(x[:max_src_len]+[PAD_IDX for i in range(max(max_src_len-len(x),0))])
+        X_len.append(min(len(x),max_src_len))
+        Y.append(y[:max_trg_len]+[PAD_IDX for i in range(max(max_trg_len-len(y),0))])
     
     Y=torch.tensor(Y).permute(1,0).contiguous()
     X=torch.tensor(X).permute(1,0).contiguous()
@@ -32,11 +32,9 @@ def collator(batch,PAD_IDX,max_src_len,max_trg_len):
     return (X,X_len),Y
 
 class Vocab:
-    def __init__(self,src_dic=None,trg_dic=None,src_max_len=None,trg_max_len=None):
+    def __init__(self,src_dic=None,trg_dic=None):
         self.src_stoi = src_dic
         self.src_itos = defaultdict(self.ret_unk)
-        self.src_max_len=src_max_len
-        self.trg_max_len=trg_max_len
 
         if self.src_stoi is not None:
             for k,v in self.src_stoi.items():
@@ -56,7 +54,6 @@ class Vocab:
     
     def build_dic(self,path,preprocessor):
         dic=defaultdict(self.ret_z)
-        max_len=0
         dic['<sos>']=1
         dic['<eos>']=2
         dic['<pad>']=3
@@ -64,44 +61,40 @@ class Vocab:
         with open(path,'r',encoding='UTF-8') as F:
             for line in F:
                 tokens=preprocessor(line)
-                max_len=max(max_len,len(tokens))
                 for token in tokens:
                     if token not in dic:
                         dic[token]=ctr
                         ctr+=1
-        return dic,max_len
+        return dic
     
-    def add_src_dic(self,dic,length):
+    def add_src_dic(self,dic):
         self.src_stoi = dic
-        self.src_max_len=length
         for k,v in self.src_stoi.items():
             self.src_itos[v]=k
     
-    def add_trg_dic(self,dic,length):
+    def add_trg_dic(self,dic):
         self.trg_stoi = dic
-        self.trg_max_len=length
         for k,v in self.trg_stoi.items():
             self.trg_itos[v]=k
 
 class DataReader(IterableDataset):
-    def __init__(self,args,paths,src_preprocessor,trg_preprocessor,DIC=None):
+    def __init__(self,args,paths,preprocessors,DIC=None):
         self.src_path = paths[0]
         self.trg_path = paths[1]
+        self.src_preprocessor = preprocessors[0]
+        self.trg_preprocessor = preprocessors[1]
         
         self.vocab = Vocab()
         if DIC is None:
-            src_dic,src_max_len = self.vocab.build_dic(self.src_path,src_preprocessor)
+            src_dic = self.vocab.build_dic(self.src_path,self.src_preprocessor)
             logger.info('Built source dictionary',extra=args.exec_id)
-            trg_dic,trg_max_len = self.vocab.build_dic(self.trg_path,trg_preprocessor)
+            trg_dic = self.vocab.build_dic(self.trg_path,self.trg_preprocessor)
             logger.info('Built target dictionary',extra=args.exec_id)
-            self.vocab.add_src_dic(src_dic,src_max_len)
-            self.vocab.add_trg_dic(trg_dic,trg_max_len)
+            self.vocab.add_src_dic(src_dic)
+            self.vocab.add_trg_dic(trg_dic)
         else:
             self.vocab=DIC
         
-        self.src_preprocessor = src_preprocessor
-        self.trg_preprocessor = trg_preprocessor
-
     def line_mapper(self, line, is_src):
         text = line
         tokens = []
@@ -129,12 +122,11 @@ class DataReader(IterableDataset):
         
         return zipped_itr
 
-# #TEST
+#TEST
 # import config
 # args,unparsed = config.get_args()
-# test_dataset = DataReader(args,('./Data/dev_test/dev.en','./Data/dev_test/dev.hi'),en_preprocessor,hi_preprocessor)
-# print('built vocab',test_dataset.vocab.trg_max_len,test_dataset.vocab.src_max_len)
-# dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3,62,62))
+# test_dataset = DataReader(args,('./Data/dev_test/dev.en','./Data/dev_test/dev.hi'),(en_preprocessor,hi_preprocessor))
+# dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3,10,10))
 
 # ctr=0
 # for X, y in dataloader:
@@ -143,5 +135,7 @@ class DataReader(IterableDataset):
 #     print('-----')
 #     print(y)
 #     print(('#################'))
+#     print(X[0].shape)
+#     print(y.shape)
 #     if ctr==2:
 #         break
