@@ -52,6 +52,7 @@ def train(model, iterator, optimizer, criterion, clip, args):
         
         epoch_loss += loss.item()
         batch_ctr+=1
+        break
     return epoch_loss / (batch_ctr*args.batch)
 
 def evaluate(model, iterator, criterion, args):
