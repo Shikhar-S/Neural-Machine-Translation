@@ -51,3 +51,21 @@ def init_weights(m):
             nn.init.normal_(param.data, mean=0, std=0.01)
         else:
             nn.init.constant_(param.data, 0)
+
+def memReport():
+    import gc
+    for obj in gc.get_objects():
+        if torch.is_tensor(obj):
+            print(type(obj),obj.size())
+
+def cpuStats():
+    import os
+    import sys
+    import psutil
+    print(sys.version)
+    print(psutil.cpu_percent())
+    print(psutil.virtual_memory())
+    pid = os.getpid()
+    py = psutil.Process(pid)
+    memoryUse = py.memory_info()[0] / 2. ** 30
+    print(memoryUse)

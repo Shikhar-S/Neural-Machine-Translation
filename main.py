@@ -22,37 +22,39 @@ def train(model, iterator, optimizer, criterion, clip, args):
     epoch_loss = 0
     batch_ctr=0
     for batch in tqdm(iterator):
-        
+        torch.cuda.empty_cache()
+        print('Allocated',torch.cuda.memory_allocated())
+        print('Cached',torch.cuda.memory_cached())
         src, src_len = batch[0]
         trg = batch[1]
         src=src.to(device)
         src_len=src_len.to(device)
         trg = trg.to(device)
-
+        
         optimizer.zero_grad()
         
         output, _ = model(src, src_len, trg)
-        
         #trg = [trg sent len, batch size]
         #output = [trg sent len, batch size, output dim]
         
         output = output[1:].view(-1, output.shape[-1])
         trg = trg[1:].view(-1)
-        
         #trg = [(trg sent len - 1) * batch size]
         #output = [(trg sent len - 1) * batch size, output dim]
         
         loss = criterion(output, trg)
-        
         loss.backward()
-        
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
         
         optimizer.step()
-        
         epoch_loss += loss.item()
         batch_ctr+=1
-        break
+        del src
+        del src_len
+        del trg
+        del output
+        del _
+        del loss
     return epoch_loss / (batch_ctr*args.batch)
 
 def evaluate(model, iterator, criterion, args):
@@ -145,6 +147,8 @@ def translation_mode(args):
 
 def train_mode(args):
     #Get Data
+    utils.memReport()
+    utils.cpuStats()
     training_dataset = DataReader(args,args.training_data,en_preprocessor,hi_preprocessor)
     validation_dataset = DataReader(args,args.validation_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     # testing_dataset = DataReader(args,args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
@@ -172,7 +176,8 @@ def train_mode(args):
     CLIP = 1
     best_valid_loss = float('inf')
 
-    optimizer = optim.Adam(model.parameters())
+    #optimizer = optim.Adam(model.parameters())
+    optimizer = optim.SGD(model.parameters(),lr=0.01)
     criterion = nn.CrossEntropyLoss(ignore_index = PAD_IDX)
     
     for epoch in range(N_EPOCHS): 
