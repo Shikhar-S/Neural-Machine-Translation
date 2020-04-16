@@ -23,8 +23,8 @@ def train(model, iterator, optimizer, criterion, clip, args):
     batch_ctr=0
     for batch in tqdm(iterator):
         torch.cuda.empty_cache()
-        print('Allocated',torch.cuda.memory_allocated())
-        print('Cached',torch.cuda.memory_cached())
+        # print('Allocated',torch.cuda.memory_allocated())
+        # print('Cached',torch.cuda.memory_cached())
         src, src_len = batch[0]
         trg = batch[1]
         src=src.to(device)

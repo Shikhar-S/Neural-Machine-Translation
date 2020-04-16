@@ -16,6 +16,8 @@ class Seq2Seq(nn.Module):
         self.sos_idx = sos_idx
         self.eos_idx = eos_idx
         self.device = args.device
+        self.src_max_len = args.src_max_len
+        self.trg_max_len = args.trg_max_len
         
     def create_mask(self, src):
         mask = (src != self.pad_idx).permute(1, 0)
@@ -32,18 +34,17 @@ class Seq2Seq(nn.Module):
         if trg is None:
             assert teacher_forcing_ratio == 0, "Must be zero during inference"
             inference = True
-            trg = torch.zeros((100, src.shape[1])).long().fill_(self.sos_idx).to(self.device)
+            trg = torch.zeros((self.trg_max_len, src.shape[1])).long().fill_(self.sos_idx).to(self.device)
         else:
             inference = False
-            
+        
         batch_size = src.shape[1]
-        max_len = trg.shape[0] if trg is not None else 100
         
         #tensor to store decoder outputs
-        outputs = torch.zeros(max_len, batch_size, self.output_vocab_sz).to(self.device)
+        outputs = torch.zeros(self.trg_max_len, batch_size, self.output_vocab_sz).to(self.device)
         
         #tensor to store attention
-        attentions = torch.zeros(max_len, batch_size, src.shape[0]).to(self.device)
+        attentions = torch.zeros(self.trg_max_len, batch_size, self.src_max_len).to(self.device)
         
         #encoder_outputs is all hidden states of the input sequence, back and forwards
         #hidden is the final forward and backward hidden states, passed through a linear layer
@@ -51,15 +52,16 @@ class Seq2Seq(nn.Module):
                 
         #first input to the decoder is the <sos> tokens
         output = trg[0,:]
-        
+
         mask = self.create_mask(src)
-                
+        mask=mask[:,:encoder_hiddens.shape[0]]
         #mask = [batch size, src sent len]
                 
-        for t in range(1, max_len):
+        for t in range(1, self.trg_max_len):
             output, hidden_last, attention = self.decoder(output, hidden_last, encoder_hiddens, mask)
             outputs[t] = output
-            attentions[t] = attention
+
+            attentions[t,:,:attention.shape[1]] = attention
             
             teacher_force = random.random() < teacher_forcing_ratio
             top1 = output.max(1)[1]

@@ -23,6 +23,7 @@ class Attention(nn.Module):
         #step2 : mul with parameter to reduce dim
         energy = energy.permute(0,2,1)
         v = self.v.repeat(batch_size, 1).unsqueeze(1)
+
         attention = torch.bmm(v, energy).squeeze(1)
 
         #mask pad tokens
