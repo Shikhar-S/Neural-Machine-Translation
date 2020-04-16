@@ -14,17 +14,21 @@ def hi_preprocessor(text):
     return [token for token in indic_tokenize.trivial_tokenize(text)]
 
 def collator(batch,PAD_IDX,max_src_len,max_trg_len):
-    # max_src_len = max_trg_len = 0
-    # for x,y in batch:
-    #     max_src_len = max(max_src_len,len(x))
-    #     max_trg_len = max(max_trg_len,len(y))
+    dyn_max_src_len = dyn_max_trg_len = 0
+    for x,y in batch:
+        dyn_max_src_len = max(dyn_max_src_len,len(x))
+        dyn_max_trg_len = max(dyn_max_trg_len,len(y))
+    
+    dyn_max_src_len = min(dyn_max_src_len,max_src_len)
+    dyn_max_trg_len = min(dyn_max_trg_len,max_trg_len)
+    
     X=[]
     X_len= []
     Y=[]
     for x,y in batch:
-        X.append(x[:max_src_len]+[PAD_IDX for i in range(max(max_src_len-len(x),0))])
-        X_len.append(min(len(x),max_src_len))
-        Y.append(y[:max_trg_len]+[PAD_IDX for i in range(max(max_trg_len-len(y),0))])
+        X.append(x[:dyn_max_src_len]+[PAD_IDX for i in range(max(dyn_max_src_len-len(x),0))])
+        X_len.append(min(len(x),dyn_max_src_len))
+        Y.append(y[:dyn_max_trg_len]+[PAD_IDX for i in range(max(dyn_max_trg_len-len(y),0))])
     
     Y=torch.tensor(Y).permute(1,0).contiguous()
     X=torch.tensor(X).permute(1,0).contiguous()
@@ -122,11 +126,11 @@ class DataReader(IterableDataset):
         
         return zipped_itr
 
-#TEST
+# #TEST
 # import config
 # args,unparsed = config.get_args()
 # test_dataset = DataReader(args,('./Data/dev_test/dev.en','./Data/dev_test/dev.hi'),(en_preprocessor,hi_preprocessor))
-# dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3,10,10))
+# dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3,2,50))
 
 # ctr=0
 # for X, y in dataloader:
