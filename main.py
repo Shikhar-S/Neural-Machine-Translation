@@ -136,7 +136,7 @@ def inference_mode(args):
 
     sentence=input('Enter sentence in source language')
     translation,attention = translate_sentence(model,vocab,sentence,args)
-    with open('temp_out.txt','w',encoding='UTF-8') as F:
+    with open(args.output_file,'w',encoding='UTF-8') as F:
         print('Translated: ',' '.join(translation),file=F)
     display_attention(sentence,translation,attention)    
 
@@ -203,7 +203,7 @@ if __name__ == '__main__':
     args,unparsed = config.get_args()
     if len(unparsed)>0:
         logger.warning('Unparsed args: %s',unparsed)
-    #inference_mode(args)
+    
     if args.mode == 'infer':
         inference_mode(args)
     elif args.mode == 'train':

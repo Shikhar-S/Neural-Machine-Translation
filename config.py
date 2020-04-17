@@ -44,6 +44,7 @@ parser.add_argument('--load_model_path',type=str,default='./trained_models/seq2s
 parser.add_argument('--load_dic_path',type=str,default='./trained_models/dictionary.pkl')
 parser.add_argument('--src_max_len',type=int,default=30)
 parser.add_argument('--trg_max_len',type=int,default=30)
+parser.add_argument('--output_file',type=str,default='./translation_out.txt')
 
 
 def get_args():
