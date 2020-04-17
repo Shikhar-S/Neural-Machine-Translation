@@ -130,7 +130,7 @@ def inference_mode(args):
     SOS_IDX = vocab.src_stoi['<sos>']
     EOS_IDX = vocab.src_stoi['<eos>']
     device = utils.get_device(args)
-
+    print(INPUT_DIM,OUTPUT_DIM)
     model = Seq2Seq(args,INPUT_DIM,OUTPUT_DIM, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path))
 
@@ -192,7 +192,7 @@ def training_mode(args):
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), args.save_model_path)
             with open(args.save_dic_path,'wb') as F:
-                pickle.dump(training_dataset.vocab.src_stoi,F)
+                pickle.dump(training_dataset.vocab,F)
         
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
