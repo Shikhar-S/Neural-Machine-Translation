@@ -91,12 +91,12 @@ def translate_sentence(model,vocab,sentence,args):
     device = utils.get_device(args)
     tokenized = en_preprocessor(sentence) 
     tokenized = ['<sos>'] + tokenized + ['<eos>']
-    numericalized = [vocab.src_stoi[t] for t in tokenized] 
+    numericalized = [vocab.src_stoi.get(t,0) for t in tokenized] 
     sentence_length = torch.LongTensor([len(numericalized)]).to(device) 
     tensor = torch.LongTensor(numericalized).unsqueeze(1).to(device) 
-    translation_tensor_logits, attention = model(tensor, sentence_length, None) 
+    translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
     translation_tensor = torch.argmax(translation_tensor_logits.squeeze(1), 1)
-    translation = [vocab.trg_itos[t] for t in translation_tensor]
+    translation = [vocab.trg_itos.get(t,'<UNK>') for t in translation_tensor]
     translation, attention = translation[1:], attention[1:]
     return translation, attention
 
@@ -123,20 +123,20 @@ def inference_mode(args):
     vocab=None
     with open(args.load_dic_path, 'rb') as F:
         vocab = pickle.load(F)
-
+    
     INPUT_DIM = len(vocab.src_stoi)
     OUTPUT_DIM = len(vocab.trg_stoi)
     PAD_IDX = vocab.src_stoi['<pad>']
     SOS_IDX = vocab.src_stoi['<sos>']
     EOS_IDX = vocab.src_stoi['<eos>']
     device = utils.get_device(args)
-    print(INPUT_DIM,OUTPUT_DIM)
+
     model = Seq2Seq(args,INPUT_DIM,OUTPUT_DIM, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path))
 
     sentence=input('Enter sentence in source language')
     translation,attention = translate_sentence(model,vocab,sentence,args)
-    print('Translated: ',' '.join(translation.join))
+    print('Translated: ',' '.join(translation))
     display_attention(sentence,translation,attention)    
 
 def training_mode(args):
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     args,unparsed = config.get_args()
     if len(unparsed)>0:
         logger.warning('Unparsed args: %s',unparsed)
-
+    #inference_mode(args)
     if args.mode == 'infer':
         inference_mode(args)
     elif args.mode == 'train':

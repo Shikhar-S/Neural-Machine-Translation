@@ -40,14 +40,14 @@ def collator(batch,PAD_IDX,max_src_len,max_trg_len):
 class Vocab:
     def __init__(self,src_dic=None,trg_dic=None):
         self.src_stoi = src_dic
-        self.src_itos = defaultdict(self.ret_unk)
+        self.src_itos = {}
 
         if self.src_stoi is not None:
             for k,v in self.src_stoi.items():
                 self.src_itos[v]=k
 
         self.trg_stoi = trg_dic
-        self.trg_itos = defaultdict(self.ret_unk)
+        self.trg_itos = {}
         
         if self.trg_stoi is not None:
             for k,v in self.trg_stoi.items():
@@ -56,11 +56,8 @@ class Vocab:
     def ret_z(self):
         return 0
     
-    def ret_unk(self):
-        return '<UNK>'
-    
     def build_dic(self,path,preprocessor,vocab_sz):
-        dic=defaultdict(self.ret_z)
+        dic={}
         freq_dic=defaultdict(self.ret_z)
         dic['<UNK>']=0
         dic['<sos>']=1
@@ -79,8 +76,6 @@ class Vocab:
                 ctr+=1
                 if ctr == vocab_sz:
                     break
-            
-        
         return dic
     
     def add_src_dic(self,dic):
@@ -120,11 +115,11 @@ class DataReader(IterableDataset):
         tokens = []
         if is_src:
             tokens.append(self.vocab.src_stoi['<sos>'])
-            tokens = tokens + [self.vocab.src_stoi[token] for token in self.src_preprocessor(text)]
+            tokens = tokens + [self.vocab.src_stoi.get(token,'<UNK>') for token in self.src_preprocessor(text)]
             tokens.append(self.vocab.src_stoi['<eos>'])
         else:
             tokens.append(self.vocab.trg_stoi['<sos>'])
-            tokens = tokens + [self.vocab.trg_stoi[token] for token in self.trg_preprocessor(text)]
+            tokens = tokens + [self.vocab.trg_stoi.get(token,'<UNK>') for token in self.trg_preprocessor(text)]
             tokens.append(self.vocab.trg_stoi['<eos>'])
         return tokens
 
