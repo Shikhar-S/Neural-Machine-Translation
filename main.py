@@ -89,14 +89,14 @@ def evaluate(model, iterator, criterion, args):
 def translate_sentence(model,vocab,sentence,args):
     model.eval()
     device = utils.get_device(args)
-    tokenized = en_preprocessor(sentence) 
+    tokenized = en_preprocessor(sentence)
     tokenized = ['<sos>'] + tokenized + ['<eos>']
-    numericalized = [vocab.src_stoi.get(t,0) for t in tokenized] 
+    numericalized = [vocab.src_stoi.get(t,0) for t in tokenized]
     sentence_length = torch.LongTensor([len(numericalized)]).to(device) 
     tensor = torch.LongTensor(numericalized).unsqueeze(1).to(device) 
     translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
     translation_tensor = torch.argmax(translation_tensor_logits.squeeze(1), 1)
-    translation = [vocab.trg_itos.get(t,'<UNK>') for t in translation_tensor]
+    translation = [vocab.trg_itos.get(t.item(),'<UNK>') for t in translation_tensor]
     translation, attention = translation[1:], attention[1:]
     return translation, attention
 
@@ -136,7 +136,8 @@ def inference_mode(args):
 
     sentence=input('Enter sentence in source language')
     translation,attention = translate_sentence(model,vocab,sentence,args)
-    print('Translated: ',' '.join(translation))
+    with open('temp_out.txt','w',encoding='UTF-8') as F:
+        print('Translated: ',' '.join(translation),file=F)
     display_attention(sentence,translation,attention)    
 
 def training_mode(args):
