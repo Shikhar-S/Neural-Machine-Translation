@@ -21,6 +21,8 @@ def collator(batch,PAD_IDX,max_src_len,max_trg_len):
     
     dyn_max_src_len = min(dyn_max_src_len,max_src_len)
     dyn_max_trg_len = min(dyn_max_trg_len,max_trg_len)
+    #dyn_max_src_len=max_src_len
+    #dyn_max_trg_len=max_trg_len
     
     X=[]
     X_len= []

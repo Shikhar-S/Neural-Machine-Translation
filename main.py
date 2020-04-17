@@ -49,12 +49,6 @@ def train(model, iterator, optimizer, criterion, clip, args):
         optimizer.step()
         epoch_loss += loss.item()
         batch_ctr+=1
-        del src
-        del src_len
-        del trg
-        del output
-        del _
-        del loss
     return epoch_loss / (batch_ctr*args.batch)
 
 def evaluate(model, iterator, criterion, args):
