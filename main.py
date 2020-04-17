@@ -147,7 +147,7 @@ def training_mode(args):
     lengths=(SRC_MAX_LEN,TRG_MAX_LEN)
     vocab_sz=(args.input_vocab,args.output_vocab)
 
-    training_dataset = DataReader(args,args.validation_data,preprocessors,vocab_sz)
+    training_dataset = DataReader(args,args.training_data,preprocessors,vocab_sz)
     validation_dataset = DataReader(args,args.validation_data,preprocessors,DIC=training_dataset.vocab)
     # testing_dataset = DataReader(args,args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     
