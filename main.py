@@ -132,7 +132,7 @@ def inference_mode(args):
     device = utils.get_device(args)
 
     model = Seq2Seq(args,INPUT_DIM,OUTPUT_DIM, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
-    model.load_state_dict(torch.load(args.load_model_path))
+    model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
 
     sentence=input('Enter sentence in source language')
     translation,attention = translate_sentence(model,vocab,sentence,args)

@@ -16,7 +16,7 @@ Install prerequisites with:
     
     pip3 install -r requirements.txt
     
-    Download data from [IITB En-Hi parallel corpus](http://www.cfilt.iitb.ac.in/iitb_parallel/) and extract in Data folder.
+and download and extract [IITB En-Hi parallel corpus](http://www.cfilt.iitb.ac.in/iitb_parallel/) in Data folder.
 
 To train model :
     
