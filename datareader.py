@@ -115,11 +115,11 @@ class DataReader(IterableDataset):
         tokens = []
         if is_src:
             tokens.append(self.vocab.src_stoi['<sos>'])
-            tokens = tokens + [self.vocab.src_stoi.get(token,'<UNK>') for token in self.src_preprocessor(text)]
+            tokens = tokens + [self.vocab.src_stoi.get(token,0) for token in self.src_preprocessor(text)]
             tokens.append(self.vocab.src_stoi['<eos>'])
         else:
             tokens.append(self.vocab.trg_stoi['<sos>'])
-            tokens = tokens + [self.vocab.trg_stoi.get(token,'<UNK>') for token in self.trg_preprocessor(text)]
+            tokens = tokens + [self.vocab.trg_stoi.get(token,0) for token in self.trg_preprocessor(text)]
             tokens.append(self.vocab.trg_stoi['<eos>'])
         return tokens
 
