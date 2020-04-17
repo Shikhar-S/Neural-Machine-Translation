@@ -119,7 +119,7 @@ def display_attention(candidate, translation, attention):
     plt.show()
     plt.close()
 
-def translation_mode(args):
+def inference_mode(args):
     vocab=None
     with open(args.load_dic_path, 'rb') as F:
         vocab = pickle.load(F)
@@ -139,15 +139,16 @@ def translation_mode(args):
     print('Translated: ',' '.join(translation.join))
     display_attention(sentence,translation,attention)    
 
-def train_mode(args):
+def training_mode(args):
     #Get Data
     TRG_MAX_LEN = args.trg_max_len
     SRC_MAX_LEN = args.src_max_len
     preprocessors=(en_preprocessor,hi_preprocessor)
     lengths=(SRC_MAX_LEN,TRG_MAX_LEN)
-    
-    training_dataset = DataReader(args,args.training_data,preprocessors)
-    validation_dataset = DataReader(args,args.validation_data,preprocessors,training_dataset.vocab)
+    vocab_sz=(args.input_vocab,args.output_vocab)
+
+    training_dataset = DataReader(args,args.validation_data,preprocessors,vocab_sz)
+    validation_dataset = DataReader(args,args.validation_data,preprocessors,DIC=training_dataset.vocab)
     # testing_dataset = DataReader(args,args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
     
     INPUT_DIM = len(training_dataset.vocab.src_stoi)
@@ -159,7 +160,6 @@ def train_mode(args):
     SOS_IDX = training_dataset.vocab.src_stoi['<sos>']
     EOS_IDX = training_dataset.vocab.src_stoi['<eos>']
     
-    print(TRG_MAX_LEN,SRC_MAX_LEN)
     training_dataloader = DataLoader(training_dataset, batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))
     validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))
     # testing_dataloader = DataLoader(testing_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX))
@@ -202,7 +202,8 @@ if __name__ == '__main__':
     args,unparsed = config.get_args()
     if len(unparsed)>0:
         logger.warning('Unparsed args: %s',unparsed)
-    if args.translate:
-        translation_mode(args)
-    elif args.train:
-        train_mode(args)
+
+    if args.mode == 'infer':
+        inference_mode(args)
+    elif args.mode == 'train':
+        training_mode(args)

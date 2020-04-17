@@ -55,11 +55,14 @@ class Vocab:
     
     def ret_z(self):
         return 0
+    
     def ret_unk(self):
         return '<UNK>'
     
-    def build_dic(self,path,preprocessor):
+    def build_dic(self,path,preprocessor,vocab_sz):
         dic=defaultdict(self.ret_z)
+        freq_dic=defaultdict(self.ret_z)
+        dic['<UNK>']=0
         dic['<sos>']=1
         dic['<eos>']=2
         dic['<pad>']=3
@@ -68,9 +71,16 @@ class Vocab:
             for line in F:
                 tokens=preprocessor(line)
                 for token in tokens:
-                    if token not in dic:
-                        dic[token]=ctr
-                        ctr+=1
+                    freq_dic[token]+=1
+        
+        for k,v in sorted(freq_dic.items(),key = lambda kv:(kv[1],kv[0]),reverse=True):
+            if k not in dic:
+                dic[k]=ctr
+                ctr+=1
+                if ctr == vocab_sz:
+                    break
+            
+        
         return dic
     
     def add_src_dic(self,dic):
@@ -84,20 +94,24 @@ class Vocab:
             self.trg_itos[v]=k
 
 class DataReader(IterableDataset):
-    def __init__(self,args,paths,preprocessors,DIC=None):
+    def __init__(self,args,paths,preprocessors,vocab_sizes=(100,100),DIC=None):
         self.src_path = paths[0]
         self.trg_path = paths[1]
         self.src_preprocessor = preprocessors[0]
         self.trg_preprocessor = preprocessors[1]
-        
+        self.src_vocab_size = vocab_sizes[0]
+        self.trg_vocab_size = vocab_sizes[1]
+
         self.vocab = Vocab()
         if DIC is None:
-            src_dic = self.vocab.build_dic(self.src_path,self.src_preprocessor)
+            src_dic = self.vocab.build_dic(self.src_path,self.src_preprocessor,self.src_vocab_size)
             logger.info('Built source dictionary',extra=args.exec_id)
-            trg_dic = self.vocab.build_dic(self.trg_path,self.trg_preprocessor)
+            trg_dic = self.vocab.build_dic(self.trg_path,self.trg_preprocessor,self.trg_vocab_size)
             logger.info('Built target dictionary',extra=args.exec_id)
             self.vocab.add_src_dic(src_dic)
             self.vocab.add_trg_dic(trg_dic)
+            self.src_vocab_size = len(self.vocab.src_stoi)
+            self.trg_vocab_size = len(self.vocab.trg_stoi)
         else:
             self.vocab=DIC
         
@@ -131,7 +145,11 @@ class DataReader(IterableDataset):
 # #TEST
 # import config
 # args,unparsed = config.get_args()
-# test_dataset = DataReader(args,('./Data/dev_test/dev.en','./Data/dev_test/dev.hi'),(en_preprocessor,hi_preprocessor))
+# test_dataset = DataReader(args,('./Data/dev_test/dev.en','./Data/dev_test/dev.hi'),(en_preprocessor,hi_preprocessor),(10,10))
+# print(len(test_dataset.vocab.src_stoi))
+# print(test_dataset.vocab.src_stoi)
+# print(len(test_dataset.vocab.src_itos))
+# print(test_dataset.vocab.src_itos)
 # dataloader = DataLoader(test_dataset, batch_size = 4, drop_last=True,collate_fn= lambda b: collator(b,3,2,50))
 
 # ctr=0
@@ -144,4 +162,4 @@ class DataReader(IterableDataset):
 #     print(X[0].shape)
 #     print(y.shape)
 #     if ctr==2:
-#         break
+#          break
