@@ -65,9 +65,11 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch_loss': epoch_loss,
             }, args.checkpoint_path)
-            print(f'Epoch: {epoch+1:02} | Batch: {batch_ctr+1}')
+            EPOCH_INFO=f'Epoch: {epoch+1:02} | Batch: {batch_ctr+1:02}'
             av_loss=epoch_loss/(batch_ctr+1)
-            print(f'\tRunning av training Loss: {av_loss:.3f} | Train PPL: {math.exp(av_loss):7.3f}')
+            LOSS_INFO=f'\tRunning av training Loss: {av_loss:.3f} | Train PPL: {math.exp(av_loss):7.3f}'
+            logger.info(EPOCH_INFO,extra=args.exec_id)
+            logger.infor(LOSS_INFO,extra=args.exec_id)
         batch_ctr+=1
     return epoch_loss / (batch_ctr*args.batch)
 
