@@ -198,6 +198,7 @@ def training_mode(args):
     
     #load checkpoint, if applicable
     start_epoch = 0
+    checkpoint=None
     if args.load_checkpoint:
         checkpoint = torch.load(args.checkpoint_path)
         model.load_state_dict(checkpoint['model_state_dict'])
