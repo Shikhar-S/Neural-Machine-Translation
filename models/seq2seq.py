@@ -10,8 +10,8 @@ class Seq2Seq(nn.Module):
         super(Seq2Seq,self).__init__()
         self.input_vocab_sz = input_vocab_sz
         self.output_vocab_sz = output_vocab_sz
-        self.encoder = Encoder(input_vocab_sz,args.input_embedding_dim,args.encoder_dim,args.decoder_dim)
-        self.decoder = Decoder(output_vocab_sz,args.output_embedding_dim,args.encoder_dim,args.decoder_dim)
+        self.encoder = Encoder(input_vocab_sz,args.input_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
+        self.decoder = Decoder(output_vocab_sz,args.output_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
         self.pad_idx = pad_idx
         self.sos_idx = sos_idx
         self.eos_idx = eos_idx

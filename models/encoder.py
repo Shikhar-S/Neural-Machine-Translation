@@ -3,15 +3,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class Encoder(nn.Module):
-    def __init__(self,input_vocab_sz,input_embedding_dim,encoder_dim,decoder_dim):
+    def __init__(self,input_vocab_sz,input_embedding_dim,encoder_dim,decoder_dim,dropout):
         super(Encoder,self).__init__()
         self.embedding_layer=nn.Embedding(input_vocab_sz,input_embedding_dim)
         self.rnn = nn.GRU(input_embedding_dim,encoder_dim,bidirectional=True)
         self.forward_net = nn.Linear(encoder_dim * 2, decoder_dim)
+        self.dropout=nn.Dropout(dropout)
     
     def forward(self,input,input_len):
         #embed input
-        embeddings = self.embedding_layer(input)
+        embeddings = self.dropout(self.embedding_layer(input))
         packed_embeddings = nn.utils.rnn.pack_padded_sequence(embeddings,input_len,enforce_sorted=False)
 
         #feed into rnn to get all hidden states

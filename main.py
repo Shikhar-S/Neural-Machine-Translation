@@ -15,13 +15,21 @@ import pickle
 
 logger = utils.get_logger()
 
-def train(model, iterator, optimizer, criterion, clip, args):
+def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=None):
     device=utils.get_device(args)
     model.train()
     
     epoch_loss = 0
     batch_ctr=0
-    for batch in tqdm(iterator):
+    #load checkpoint, if applicable
+    if checkpoint is not None:
+        batch_ctr=checkpoint['batch']
+        epoch_loss=checkpoint['epoch_loss']
+
+    for current_batch_ctr,batch in enumerate(tqdm(iterator)):
+        if current_batch_ctr < batch_ctr:
+            continue 
+
         torch.cuda.empty_cache()
         # print('Allocated',torch.cuda.memory_allocated())
         # print('Cached',torch.cuda.memory_cached())
@@ -48,6 +56,15 @@ def train(model, iterator, optimizer, criterion, clip, args):
         
         optimizer.step()
         epoch_loss += loss.item()
+        #Save checkpoint after every 100 batches
+        if batch_ctr%100==0 and args.save_checkpoint:
+            torch.save({
+            'epoch': epoch,
+            'batch': batch_ctr,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'epoch_loss': epoch_loss,
+            }, args.checkpoint_path)
         batch_ctr+=1
     return epoch_loss / (batch_ctr*args.batch)
 
@@ -179,10 +196,19 @@ def training_mode(args):
     #optimizer = optim.SGD(model.parameters(),lr=0.01)
     criterion = nn.CrossEntropyLoss(ignore_index = PAD_IDX)
     
-    for epoch in range(N_EPOCHS): 
+    #load checkpoint, if applicable
+    start_epoch = 0
+    if args.load_checkpoint:
+        checkpoint = torch.load(args.checkpoint_path)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        start_epoch = checkpoint['epoch']
+
+
+    for epoch in range(start_epoch,N_EPOCHS): 
         start_time = time.time()
         
-        train_loss = train(model, training_dataloader, optimizer, criterion, CLIP, args)
+        train_loss = train(model, training_dataloader, epoch, optimizer, criterion, CLIP, args, checkpoint)
         valid_loss = evaluate(model, validation_dataloader, criterion, args)
         
         end_time = time.time()

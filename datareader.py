@@ -8,7 +8,7 @@ import utils
 logger = utils.get_logger()
 
 def en_preprocessor(text):
-    return [t.lower().replace('.','') for t in text.split()]
+    return [t.lower().replace('.','').replace(',','') for t in text.split()]
 
 def hi_preprocessor(text):
     return [token for token in indic_tokenize.trivial_tokenize(text)]

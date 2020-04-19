@@ -4,12 +4,13 @@ import torch
 from models.attention import Attention
 
 class Decoder(nn.Module):
-    def __init__(self,output_vocab_sz,output_embedding_dim,encoder_dim,decoder_dim):
+    def __init__(self,output_vocab_sz,output_embedding_dim,encoder_dim,decoder_dim,dropout):
         super(Decoder,self).__init__()
         self.embedding_layer = nn.Embedding(output_vocab_sz,output_embedding_dim)
         self.f = nn.GRU(output_embedding_dim + encoder_dim * 2  , decoder_dim)
         self.g = nn.Linear(output_embedding_dim + decoder_dim + encoder_dim * 2,output_vocab_sz)
         self.attention = Attention(encoder_dim,decoder_dim)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self,input,decoder_hidden,encoder_hiddens,mask):
         #input = y_im1 , decoder_hidden = s_im1 , encoder_hiddens = h 
@@ -24,7 +25,7 @@ class Decoder(nn.Module):
         c_i = torch.bmm(attn, encoder_hiddens)
         
         #compute new decoder hidden state
-        y_im1 = self.embedding_layer(input.unsqueeze(0))
+        y_im1 = self.dropout(self.embedding_layer(input.unsqueeze(0)))
         c_i = c_i.permute(1,0,2)
         rnn_input = torch.cat((y_im1,c_i), dim=2 ) 
 
