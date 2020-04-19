@@ -69,7 +69,7 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             av_loss=epoch_loss/(batch_ctr+1)
             LOSS_INFO=f'\tRunning av training Loss: {av_loss:.3f} | Train PPL: {math.exp(av_loss):7.3f}'
             logger.info(EPOCH_INFO,extra=args.exec_id)
-            logger.infor(LOSS_INFO,extra=args.exec_id)
+            logger.info(LOSS_INFO,extra=args.exec_id)
         batch_ctr+=1
     return epoch_loss / (batch_ctr*args.batch)
 
