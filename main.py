@@ -65,6 +65,9 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch_loss': epoch_loss,
             }, args.checkpoint_path)
+            print(f'Epoch: {epoch+1:02} | Batch: {batch_ctr+1}')
+            av_loss=epoch_loss/(batch_ctr+1)
+            print(f'\tRunning av training Loss: {av_loss:.3f} | Train PPL: {math.exp(av_loss):7.3f}')
         batch_ctr+=1
     return epoch_loss / (batch_ctr*args.batch)
 
@@ -225,6 +228,7 @@ def training_mode(args):
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+        print('-----------------------------------------')
 
 if __name__ == '__main__':
     args,unparsed = config.get_args()
