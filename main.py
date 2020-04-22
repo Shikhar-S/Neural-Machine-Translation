@@ -71,7 +71,7 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             logger.info(EPOCH_INFO,extra=args.exec_id)
             logger.info(LOSS_INFO,extra=args.exec_id)
         batch_ctr+=1
-    return epoch_loss / (batch_ctr*args.batch)
+    return epoch_loss / (batch_ctr)
 
 def evaluate(model, iterator, criterion, args):
     device=utils.get_device(args)
@@ -106,7 +106,7 @@ def evaluate(model, iterator, criterion, args):
             epoch_loss += loss.item()
             batch_ctr+=1
         
-    return epoch_loss / (batch_ctr*args.batch)
+    return epoch_loss / (batch_ctr)
 
 def translate_sentence(model,vocab,sentence,args):
     model.eval()
