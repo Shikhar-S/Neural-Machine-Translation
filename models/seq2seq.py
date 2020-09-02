@@ -6,17 +6,17 @@ from models.decoder import Decoder
 import random
 
 class Seq2Seq(nn.Module):
-    def __init__(self,args,input_vocab_sz,output_vocab_sz,pad_idx, sos_idx, eos_idx):
+    def __init__(self,args,vocab_sz,pad_idx, sos_idx, eos_idx):
         super(Seq2Seq,self).__init__()
-        self.input_vocab_sz = input_vocab_sz
-        self.output_vocab_sz = output_vocab_sz
-        self.encoder = Encoder(input_vocab_sz,args.input_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
-        self.decoder = Decoder(output_vocab_sz,args.output_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
+        self.input_vocab_sz = vocab_sz
+        self.output_vocab_sz = vocab_sz
+        self.encoder = Encoder(self.input_vocab_sz,args.input_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
+        self.decoder = Decoder(self.output_vocab_sz,args.output_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
         self.pad_idx = pad_idx
         self.sos_idx = sos_idx
         self.eos_idx = eos_idx
         self.device = args.device
-        self.max_inference_len = args.trg_max_len
+        self.max_inference_len = args.max_len
         
     def create_mask(self, src):
         mask = (src != self.pad_idx).permute(1, 0)

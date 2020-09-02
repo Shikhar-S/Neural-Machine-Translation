@@ -5,13 +5,14 @@ import torch
 import time
 import torch.optim as optim
 import torch.nn as nn
-from datareader import DataReader, en_preprocessor, hi_preprocessor, collator, Vocab
+from datareader import DataReader, collator
 from models.seq2seq import Seq2Seq
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pickle
+from transformers import BertTokenizer
 
 logger = utils.get_logger()
 
@@ -71,6 +72,7 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             logger.info(EPOCH_INFO,extra=args.exec_id)
             logger.info(LOSS_INFO,extra=args.exec_id)
         batch_ctr+=1
+        break
     return epoch_loss / (batch_ctr)
 
 def evaluate(model, iterator, criterion, args):
@@ -164,31 +166,25 @@ def inference_mode(args):
 
 def training_mode(args):
     #Get Data
-    TRG_MAX_LEN = args.trg_max_len
-    SRC_MAX_LEN = args.src_max_len
-    preprocessors=(en_preprocessor,hi_preprocessor)
-    lengths=(SRC_MAX_LEN,TRG_MAX_LEN)
-    vocab_sz=(args.input_vocab,args.output_vocab)
+    MAX_LEN = args.max_len
+    tokenizer=BertTokenizer.from_pretrained(args.bert_model)
+    VOCAB_SIZE=len(tokenizer.vocab.keys())
 
-    training_dataset = DataReader(args,args.training_data,preprocessors,vocab_sz)
-    validation_dataset = DataReader(args,args.validation_data,preprocessors,DIC=training_dataset.vocab)
-    # testing_dataset = DataReader(args,args.testing_data,en_preprocessor,hi_preprocessor,training_dataset.vocab)
+    training_dataset = DataReader(args,args.training_data,tokenizer)
+    validation_dataset = DataReader(args,args.validation_data,tokenizer)
     
-    INPUT_DIM = len(training_dataset.vocab.src_stoi)
-    OUTPUT_DIM = len(training_dataset.vocab.trg_stoi)
 
     device = utils.get_device(args)
 
-    PAD_IDX = training_dataset.vocab.src_stoi['<pad>']
-    SOS_IDX = training_dataset.vocab.src_stoi['<sos>']
-    EOS_IDX = training_dataset.vocab.src_stoi['<eos>']
+    PAD_IDX = tokenizer.vocab['[PAD]']
+    SOS_IDX = tokenizer.vocab['[CLS]']
+    EOS_IDX = tokenizer.vocab['[SEP]']
     
-    training_dataloader = DataLoader(training_dataset, batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))
-    validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX,SRC_MAX_LEN,TRG_MAX_LEN))
-    # testing_dataloader = DataLoader(testing_dataset,batch_size = args.batch, drop_last=True, collate_fn=lambda b: collator(b,PAD_IDX))
+    training_dataloader = DataLoader(training_dataset, batch_size = args.batch, drop_last=True, collate_fn=collator)
+    validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=collator)
 
     #Get model
-    model = Seq2Seq(args,INPUT_DIM,OUTPUT_DIM, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     logger.info(model.apply(utils.init_weights),extra=args.exec_id) #init model
     logger.info("Number of trainable parameters: "+str(utils.count_parameters(model)),extra=args.exec_id) #log Param count
 
@@ -231,6 +227,7 @@ def training_mode(args):
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
         print('-----------------------------------------')
+        break
 
 if __name__ == '__main__':
     args,unparsed = config.get_args()
