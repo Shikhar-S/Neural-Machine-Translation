@@ -72,7 +72,6 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             logger.info(EPOCH_INFO,extra=args.exec_id)
             logger.info(LOSS_INFO,extra=args.exec_id)
         batch_ctr+=1
-        break
     return epoch_loss / (batch_ctr)
 
 def evaluate(model, iterator, criterion, args):
@@ -144,21 +143,19 @@ def display_attention(candidate, translation, attention):
     plt.close()
 
 def inference_mode(args):
-    vocab=None
     with open(args.load_dic_path, 'rb') as F:
         vocab = pickle.load(F)
     
-    INPUT_DIM = len(vocab.src_stoi)
-    OUTPUT_DIM = len(vocab.trg_stoi)
-    PAD_IDX = vocab.src_stoi['<pad>']
-    SOS_IDX = vocab.src_stoi['<sos>']
-    EOS_IDX = vocab.src_stoi['<eos>']
+    VOCAB_SIZE = len(vocab.keys())
+    PAD_IDX = vocab.src_stoi['[PAD]']
+    SOS_IDX = vocab.src_stoi['[CLS]']
+    EOS_IDX = vocab.src_stoi['[SEP]']
     device = utils.get_device(args)
 
-    model = Seq2Seq(args,INPUT_DIM,OUTPUT_DIM, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
 
-    sentence=input('Enter sentence in source language')
+    sentence=input('Enter natural language instruction')
     translation,attention = translate_sentence(model,vocab,sentence,args)
     with open(args.output_file,'w',encoding='UTF-8') as F:
         print('Translated: ',' '.join(translation),file=F)
@@ -221,13 +218,12 @@ def training_mode(args):
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), args.save_model_path)
             with open(args.save_dic_path,'wb') as F:
-                pickle.dump(training_dataset.vocab,F)
+                pickle.dump(tokenizer.vocab,F)
         
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
         print('-----------------------------------------')
-        break
 
 if __name__ == '__main__':
     args,unparsed = config.get_args()

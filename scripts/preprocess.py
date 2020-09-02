@@ -1,5 +1,5 @@
 import argparse
-from transformers import BertTokenizer
+from sklearn.model_selection import train_test_split
 import json
 
 arg_parser = argparse.ArgumentParser()
@@ -10,24 +10,31 @@ arg_parser.add_argument('--tgt_lang')
 arg_parser.add_argument('--bert_model')
 args = arg_parser.parse_args()
 
+def write_to_file(split,X,Y):
+    with open(args.output_dir+'/'+split+'.'+args.src_lang,'w') as src,open(args.output_dir+'/'+split+'.'+args.tgt_lang,'w') as tgt:
+        for x,y in zip(X,Y):
+            print(x,file=src)
+            print(y,file=tgt)
+
+
 def split_data(args):
     print('Splitting data')
     with open(args.input_file,'r') as f:
         json_data=json.load(f)
-    
-    with open(args.output_dir+'/raw.'+args.src_lang,'w') as raw_src,open(args.output_dir+'/raw.'+args.tgt_lang,'w') as raw_tgt:
-        for key in json_data.keys():
-            invocation = json_data[key]['invocation']
-            cmd = json_data[key]['cmd']
-            print(invocation,file=raw_src)
-            print(cmd,file=raw_tgt)
+    x=[]
+    y=[]
+    for key in json_data.keys():
+        invocation = json_data[key]['invocation']
+        cmd = json_data[key]['cmd']
+        x.append(invocation)
+        y.append(cmd)
 
-def tokenize(args,lang):
-    print(f'tokenizing {lang}')
-    tokenizer=BertTokenizer.from_pretrained(args.bert_model)
-    with open(args.output_dir+'/raw.'+lang,'r') as f_in,open(args.output_dir+'/tkn.'+lang,'w') as f_out:
-        for line in f_in:
-            print(tokenizer.tokenize(line),file=f_out)
+    x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.2,random_state=1)
+    x_test,x_valid,y_test,y_valid = train_test_split(x_test,y_test,test_size=0.5,random_state=1)
+    
+    write_to_file('train',x_train,y_train)
+    write_to_file('test',x_test,y_test)
+    write_to_file('valid',x_valid,y_valid)
 
 split_data(args)
 
