@@ -33,9 +33,9 @@ parser.add_argument("--epochs",type=int,default=10)
 parser.add_argument("--device",type=str,default='auto',choices=['cpu', 'gpu','auto'])
 parser.add_argument('--exec_id',type=str2dict,default={'run': str(time.time()).replace('.','')})
 
-parser.add_argument('--training_data',type=str2tuple,default=('./Data/processed_data/raw.en','./Data/processed_data/raw.cmd'))
-parser.add_argument('--testing_data',type=str2tuple,default=('./Data/processed_data/raw.en','./Data/processed_data/raw.cmd'))
-parser.add_argument('--validation_data',type=str2tuple,default=('./Data/processed_data/raw.en','./Data/processed_data/raw.cmd'))
+parser.add_argument('--training_data',type=str2tuple,default=('./Data/processed_data/train.en','./Data/processed_data/train.cmd'))
+parser.add_argument('--testing_data',type=str2tuple,default=('./Data/processed_data/test.en','./Data/processed_data/test.cmd'))
+parser.add_argument('--validation_data',type=str2tuple,default=('./Data/processed_data/valid.en','./Data/processed_data/valid.cmd'))
 
 parser.add_argument('--save_model_path',type=str,default='./trained_models/seq2seq.pt')
 parser.add_argument('--save_dic_path',type=str,default='./trained_models/dictionary.pkl')
