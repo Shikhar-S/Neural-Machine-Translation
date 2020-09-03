@@ -71,7 +71,6 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             logger.info(EPOCH_INFO,extra=args.exec_id)
             logger.info(LOSS_INFO,extra=args.exec_id)
         batch_ctr+=1
-        break
     return epoch_loss / (batch_ctr)
 
 def evaluate(model, iterator, criterion, args):
@@ -103,7 +102,6 @@ def evaluate(model, iterator, criterion, args):
 
             epoch_loss += loss.item()
             batch_ctr+=1
-            break
         
     return epoch_loss / (batch_ctr)
 
@@ -221,7 +219,6 @@ def training_mode(args):
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
         print('-----------------------------------------')
-        break
 
 if __name__ == '__main__':
     args,unparsed = config.get_args()
