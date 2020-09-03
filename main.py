@@ -91,7 +91,7 @@ def evaluate(model, iterator, criterion, args):
             src_mask=src_mask.to(device)
             trg = trg.to(device)
 
-            output = model(src, src_mask, trg)
+            output = model(src, trg, src_mask)
 
             logits = output.logits
 
