@@ -40,6 +40,9 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
         # print('Cached',torch.cuda.memory_cached())
         src, src_mask = batch[0]
         trg = batch[1]
+        print(src.shape)
+        print(src_len.shape)
+        print(trg.shape)
         src=src.to(device)
         src_mask=src_mask.to(device)
         trg = trg.to(device)
@@ -74,7 +77,8 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             config.writer.add_scalar('Batch Training PPL',math.exp(av_loss),training_batch_ctr)
         batch_ctr+=1
         training_batch_ctr+=1
-    return epoch_loss / (batch_ctr), tboard_dic
+        break
+    return epoch_loss / (batch_ctr)
 
 def evaluate(model, iterator, criterion, args,log_tb=True):
     if log_tb:
@@ -112,36 +116,40 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
                 config.writer.add_scalar('Batch Validation loss',av_loss,valid_batch_ctr)
                 config.writer.add_scalar('Batch Validation PPL',math.exp(av_loss),valid_batch_ctr)
                 valid_batch_ctr+=1
-
+            break
         
     return epoch_loss / (batch_ctr)
 
-def translate_sentence(model,vocab,sentence,args):
+def translate_sentence(model,tokenizer,sentence,args):
     model.eval()
     device = utils.get_device(args)
-    tokenized = en_preprocessor(sentence)
-    tokenized = ['<sos>'] + tokenized + ['<eos>']
-    numericalized = [vocab.src_stoi.get(t,0) for t in tokenized]
-    sentence_length = torch.LongTensor([len(numericalized)]).to(device) 
-    tensor = torch.LongTensor(numericalized).unsqueeze(1).to(device) 
+    output = tokenizer(sentence,padding='max_length',max_length=args.max_len,truncation=True)
+
+    tokenized = torch.LongTensor(output['input_ids'])    
+    sentence_length = torch.LongTensor([sum(output['attention_mask'])]).to(device) 
+    tensor = tokenized.unsqueeze(1).to(device) 
+ 
     translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
     translation_tensor = torch.argmax(translation_tensor_logits.squeeze(1), 1)
-    translation = [vocab.trg_itos.get(t.item(),'<UNK>') for t in translation_tensor]
-    translation, attention = translation[1:], attention[1:]
-    return translation, attention
+
+    translation = tokenizer.decode(translation_tensor.tolist(),skip_special_tokens=True)
+    translation_tokens = tokenizer.convert_ids_to_tokens(translation_tensor.tolist())
+    return translation, attention, translation_tokens
 
 def display_attention(candidate, translation, attention):
+    src_len = len(candidate)
+    trg_len = len(translation)
+
     fig = plt.figure(figsize=(10,10))
     ax = fig.add_subplot(111)
     
-    attention = attention.squeeze(1).cpu().detach().numpy()
+    attention = attention.squeeze(1).cpu().detach().numpy()[:src_len,:trg_len]
     
     cax = ax.matshow(attention, cmap='bone')
    
     ax.tick_params(labelsize=15)
-    ax.set_xticklabels([''] + ['<sos>'] + [t.lower() for t in en_preprocessor(candidate)] + ['<eos>'], 
-                       rotation=45)
-    ax.set_yticklabels([''] + translation)
+    ax.set_xticklabels(candidate,rotation=45)
+    ax.set_yticklabels(translation)
 
     ax.xaxis.set_major_locator(ticker.MultipleLocator(1))
     ax.yaxis.set_major_locator(ticker.MultipleLocator(1))
@@ -150,23 +158,25 @@ def display_attention(candidate, translation, attention):
     plt.close()
 
 def inference_mode(args):
-    with open(args.load_dic_path, 'rb') as F:
-        vocab = pickle.load(F)
+    tokenizer = BertTokenizer.from_pretrained(args.bert_model)
     
-    VOCAB_SIZE = len(vocab.keys())
-    PAD_IDX = vocab['[PAD]']
-    SOS_IDX = vocab['[CLS]']
-    EOS_IDX = vocab['[SEP]']
+    VOCAB_SIZE = len(tokenizer.vocab.keys())
+    PAD_IDX = tokenizer.vocab['[PAD]']
+    SOS_IDX = tokenizer.vocab['[CLS]']
+    EOS_IDX = tokenizer.vocab['[SEP]']
+
     device = utils.get_device(args)
+    print('Running inference on',device)
 
     model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
 
+
     sentence=input('Enter natural language instruction')
-    translation,attention = translate_sentence(model,vocab,sentence,args)
+    translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
     with open(args.output_file,'w',encoding='UTF-8') as F:
-        print('Translated: ',' '.join(translation),file=F)
-    #display_attention(sentence,translation,attention)    
+        print('Translated: ',translation,file=F)
+    display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
 
 def training_mode(args):
     #Get Data
@@ -215,7 +225,7 @@ def training_mode(args):
         
         train_loss = train(model, training_dataloader, epoch, optimizer, criterion, CLIP, args, checkpoint)
         valid_loss = evaluate(model, validation_dataloader, criterion, args)
-        
+
         end_time = time.time()
         
         epoch_mins, epoch_secs = utils.epoch_time(start_time, end_time)
@@ -223,14 +233,14 @@ def training_mode(args):
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), args.save_model_path)
-            with open(args.save_dic_path,'wb') as F:
-                pickle.dump(tokenizer.vocab,F)
+            
         
         config.writer.add_scalars('Epoch losses',{'Epoch training loss':train_loss,'Epoch Validation loss':valid_loss},epoch)
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
         print('-----------------------------------------')
+        break
 
 if __name__ == '__main__':
     args,unparsed = config.get_args()
