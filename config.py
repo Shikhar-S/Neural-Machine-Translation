@@ -56,6 +56,6 @@ def get_args():
     args,unparsed = parser.parse_known_args()
     logger.info('__INIT__',extra=args.exec_id)
     global writer
-    writer = SummaryWriter('logs/'+args.exec_id['run'])
+    writer = SummaryWriter('log/'+args.exec_id['run'])
     log_parsed_args(args)
     return args, unparsed
