@@ -6,7 +6,7 @@ import time
 import torch.optim as optim
 import torch.nn as nn
 from datareader import DataReader, collator
-from models.seq2seq import Seq2Seq
+from models.bert_transformer import BertTransformer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import matplotlib.pyplot as plt
