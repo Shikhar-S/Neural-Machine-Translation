@@ -158,9 +158,9 @@ def inference_mode(args):
         vocab = pickle.load(F)
     
     VOCAB_SIZE = len(vocab.keys())
-    PAD_IDX = vocab.src_stoi['[PAD]']
-    SOS_IDX = vocab.src_stoi['[CLS]']
-    EOS_IDX = vocab.src_stoi['[SEP]']
+    PAD_IDX = vocab['[PAD]']
+    SOS_IDX = vocab['[CLS]']
+    EOS_IDX = vocab['[SEP]']
     device = utils.get_device(args)
 
     model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
@@ -170,7 +170,7 @@ def inference_mode(args):
     translation,attention = translate_sentence(model,vocab,sentence,args)
     with open(args.output_file,'w',encoding='UTF-8') as F:
         print('Translated: ',' '.join(translation),file=F)
-    display_attention(sentence,translation,attention)    
+    #display_attention(sentence,translation,attention)    
 
 def training_mode(args):
     #Get Data
