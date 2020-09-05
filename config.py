@@ -2,7 +2,9 @@ import argparse
 import logging
 import utils
 import time
+from torch.utils.tensorboard import SummaryWriter
 
+writer = None
 logger = utils.get_logger()
 
 def str2bool(v):
@@ -18,6 +20,9 @@ def str2tuple(v):
 def log_parsed_args(args):
     for arg, value in sorted(vars(args).items()):
         logger.info("Argument %s: %r", arg, value, extra=args.exec_id)
+
+def get_writer():
+    return writer
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--batch",type=int,default=32)
