@@ -122,16 +122,14 @@ def translate_sentence(model,tokenizer,sentence,args):
     device = utils.get_device(args)
     output = tokenizer(sentence,padding='max_length',max_length=args.max_len,truncation=True)
 
-    tokenized = torch.LongTensor(output['input_ids'])    
-    sentence_length = torch.LongTensor([sum(output['attention_mask'])]).to(device) 
-    tensor = tokenized.unsqueeze(1).to(device) 
+    tokenized = torch.LongTensor(output['input_ids']).unsqueeze(0).to(device) 
  
-    translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
-    translation_tensor = torch.argmax(translation_tensor_logits.squeeze(1), 1)
+    model_output = model.generate(tokenized).squeeze(0)
 
-    translation = tokenizer.decode(translation_tensor.tolist(),skip_special_tokens=True)
-    translation_tokens = tokenizer.convert_ids_to_tokens(translation_tensor.tolist())
-    return translation, attention, translation_tokens
+    translation = tokenizer.decode(model_output.tolist(),skip_special_tokens=True)
+
+    translation_tokens = tokenizer.convert_ids_to_tokens(model_output.tolist())
+    return translation, translation_tokens
 
 def display_attention(candidate, translation, attention):
     src_len = len(candidate)
@@ -165,16 +163,17 @@ def inference_mode(args):
     device = utils.get_device(args)
     print('Running inference on',device)
 
-    model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = Bert2Bert(args).to(device)
     model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
 
 
     sentence=input('Enter natural language instruction')
-    translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+    translation,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
     print(translation)
     with open(args.output_file,'w',encoding='UTF-8') as F:
         print('Translated: ',translation,file=F)
-    display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
+
+    #display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
 
 def training_mode(args):
     #Get Data

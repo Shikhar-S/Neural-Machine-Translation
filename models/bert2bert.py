@@ -25,3 +25,6 @@ class Bert2Bert:
     
     def load_state_dict(self,sd):
         self.model.load_state_dict(sd)
+    
+    def generate(self,input):
+        return self.model.generate(input,decoder_start_token_id=self.model.config.decoder.pad_token_id)
