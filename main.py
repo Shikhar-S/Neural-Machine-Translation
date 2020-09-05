@@ -40,9 +40,7 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
         # print('Cached',torch.cuda.memory_cached())
         src, src_len = batch[0]
         trg = batch[1]
-        print(src.shape)
-        print(src_len.shape)
-        print(trg.shape)
+        
         src=src.to(device)
         src_len=src_len.to(device)
         trg = trg.to(device)
@@ -78,7 +76,6 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             config.writer.add_scalar('Batch Training PPL',math.exp(av_loss),training_batch_ctr)
         batch_ctr+=1
         training_batch_ctr+=1
-        break
     return epoch_loss / (batch_ctr)
 
 def evaluate(model, iterator, criterion, args,log_tb=True):
@@ -120,7 +117,7 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
                 config.writer.add_scalar('Batch Validation loss',av_loss,valid_batch_ctr)
                 config.writer.add_scalar('Batch Validation PPL',math.exp(av_loss),valid_batch_ctr)
                 valid_batch_ctr+=1
-            break
+            
         
     return epoch_loss / (batch_ctr)
 
@@ -178,6 +175,7 @@ def inference_mode(args):
 
     sentence=input('Enter natural language instruction')
     translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+    print(translation)
     with open(args.output_file,'w',encoding='UTF-8') as F:
         print('Translated: ',translation,file=F)
     display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
@@ -245,7 +243,6 @@ def training_mode(args):
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
         print('-----------------------------------------')
-        break
 
 if __name__ == '__main__':
     args,unparsed = config.get_args()
