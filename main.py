@@ -15,13 +15,17 @@ import pickle
 from transformers import BertTokenizer
 
 logger = utils.get_logger()
+training_batch_ctr=0
+valid_batch_ctr=0
 
 def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=None):
+    global training_batch_ctr
     device=utils.get_device(args)
     model.train()
     
     epoch_loss = 0
     batch_ctr=0
+
     #load checkpoint, if applicable
     if checkpoint is not None:
         batch_ctr=checkpoint['batch']
@@ -66,15 +70,16 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             'optimizer_state_dict': optimizer.state_dict(),
             'epoch_loss': epoch_loss,
             }, args.checkpoint_path)
-            EPOCH_INFO=f'Epoch: {epoch+1:02} | Batch: {batch_ctr+1:02}'
             av_loss=epoch_loss/(batch_ctr+1)
-            LOSS_INFO=f'\tRunning av training Loss: {av_loss:.3f} | Train PPL: {math.exp(av_loss):7.3f}'
-            logger.info(EPOCH_INFO,extra=args.exec_id)
-            logger.info(LOSS_INFO,extra=args.exec_id)
+            config.writer.add_scalar('Batch Training loss',av_loss,training_batch_ctr)
+            config.writer.add_scalar('Batch Training PPL',math.exp(av_loss),training_batch_ctr)
         batch_ctr+=1
-    return epoch_loss / (batch_ctr)
+        training_batch_ctr+=1
+    return epoch_loss / (batch_ctr), tboard_dic
 
-def evaluate(model, iterator, criterion, args):
+def evaluate(model, iterator, criterion, args,log_tb=True):
+    if log_tb:
+        global valid_batch_ctr
     device=utils.get_device(args)
     model.eval()
     
@@ -106,6 +111,12 @@ def evaluate(model, iterator, criterion, args):
 
             epoch_loss += loss.item()
             batch_ctr+=1
+            if log_tb:
+                av_loss = epoch_loss/(batch_ctr)
+                config.writer.add_scalar('Batch Validation loss',av_loss,valid_batch_ctr)
+                config.writer.add_scalar('Batch Validation PPL',math.exp(av_loss),valid_batch_ctr)
+                valid_batch_ctr+=1
+
         
     return epoch_loss / (batch_ctr)
 
@@ -220,6 +231,7 @@ def training_mode(args):
             with open(args.save_dic_path,'wb') as F:
                 pickle.dump(tokenizer.vocab,F)
         
+        config.writer.add_scalars('Epoch losses',{'Epoch training loss':train_loss,'Epoch Validation loss':valid_loss},epoch)
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
@@ -234,3 +246,6 @@ if __name__ == '__main__':
         inference_mode(args)
     elif args.mode == 'train':
         training_mode(args)
+
+    #close tensorboard writer    
+    config.writer.close()
