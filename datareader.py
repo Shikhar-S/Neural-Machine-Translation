@@ -31,7 +31,7 @@ class DataReader(IterableDataset):
         self.tokenizer = tokenizer
         self.space = len(self.tokenizer.vocab.keys())   
         self.padding = args.padding
-        self.max_length = args.max_length
+        self.max_length = args.max_len
 
     def src_line_mapper(self, text):
         tokens = self.tokenizer(text,padding='max_length',max_length=self.max_length,truncation=True)
