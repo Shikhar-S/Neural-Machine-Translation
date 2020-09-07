@@ -133,7 +133,7 @@ def translate_sentence(model,tokenizer,sentence,args):
     translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
     translation_tensor = torch.argmax(translation_tensor_logits.squeeze(1), 1)
 
-    translation = tokenizer.decode(translation_tensor.tolist(),skip_special_tokens=True)
+    translation = tokenizer.decode(translation_tensor.tolist(),skip_special_tokens=True,clean_up_tokenization_spaces=False)
     translation_tokens = tokenizer.convert_ids_to_tokens(translation_tensor.tolist())
     return translation, attention, translation_tokens
 
@@ -178,7 +178,7 @@ def inference_mode(args):
     print(translation)
     with open(args.output_file,'w',encoding='UTF-8') as F:
         print('Translated: ',translation,file=F)
-    display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
+    #display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
 
 def training_mode(args):
     #Get Data
