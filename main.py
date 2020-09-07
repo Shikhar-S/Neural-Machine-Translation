@@ -160,8 +160,12 @@ def display_attention(candidate, translation, attention):
 
 def inference_mode(args):
     tokenizer = BertTokenizer.from_pretrained(args.bert_model)
+    with open(args.trg_vocab_path,'rb') as f:
+        trg_tokenizer = pickle.load(f)
     
-    VOCAB_SIZE = len(tokenizer.vocab.keys())
+    SRC_VOCAB_SIZE = len(tokenizer.vocab.keys())
+    TRG_VOCAB_SIZE = trg_tokenizer.trg_vocab_len
+
     PAD_IDX = tokenizer.vocab['[PAD]']
     SOS_IDX = tokenizer.vocab['[CLS]']
     EOS_IDX = tokenizer.vocab['[SEP]']
@@ -169,27 +173,35 @@ def inference_mode(args):
     device = utils.get_device(args)
     print('Running inference on',device)
 
-    model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = Seq2Seq(args,VOCAB_SIZE,TRG_VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
 
-
-    sentence=input('Enter natural language instruction')
-    translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
-    print(translation)
-    with open(args.output_file,'w',encoding='UTF-8') as F:
-        print('Translated: ',translation,file=F)
-    display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
+    while True:
+        sentence=input('Enter natural language instruction\n')
+        if sentence=='exit':
+            break
+        translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+        print(translation)
+        print(translation_tokens)
+        with open(args.output_file,'w',encoding='UTF-8') as F:
+            print('Translated: ',translation,file=F)
+    #display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
 
 def training_mode(args):
     #Get Data
     MAX_LEN = args.max_len
     tokenizer=BertTokenizer.from_pretrained(args.bert_model)
-    VOCAB_SIZE=len(tokenizer.vocab.keys())
-
-    training_dataset = DataReader(args,args.training_data,tokenizer)
-    validation_dataset = DataReader(args,args.validation_data,tokenizer)
+    SRC_VOCAB_SIZE=len(tokenizer.vocab.keys())
     
+    training_dataset = DataReader(args,args.training_data,tokenizer)
 
+    with open(args.trg_vocab_path,'wb') as f:
+        pickle.dump(training_dataset.trg_tokenizer,f)
+    
+    TRG_VOCAB_SIZE = training_dataset.trg_tokenizer.trg_vocab_len
+
+    validation_dataset = DataReader(args,args.validation_data,tokenizer,trg_tokenizer = training_dataset.trg_tokenizer)
+    
     device = utils.get_device(args)
 
     PAD_IDX = tokenizer.vocab['[PAD]']
@@ -200,7 +212,7 @@ def training_mode(args):
     validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=collator)
 
     #Get model
-    model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = Seq2Seq(args,SRC_VOCAB_SIZE,TRG_VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     logger.info(model.apply(utils.init_weights),extra=args.exec_id) #init model
     logger.info("Number of trainable parameters: "+str(utils.count_parameters(model)),extra=args.exec_id) #log Param count
 
