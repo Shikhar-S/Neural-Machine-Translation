@@ -42,10 +42,10 @@ parser.add_argument('--training_data',type=str2tuple,default=('./Data/processed_
 parser.add_argument('--testing_data',type=str2tuple,default=('./Data/processed_data/test.en','./Data/processed_data/test.cmd'))
 parser.add_argument('--validation_data',type=str2tuple,default=('./Data/processed_data/valid.en','./Data/processed_data/valid.cmd'))
 
-parser.add_argument('--save_model_path',type=str,default='./trained_models/seq2seq.pt')
+parser.add_argument('--save_model_path',type=str,default='./trained_models/seq2seq')
 parser.add_argument('--save_checkpoint',type=str2bool,default=True)
 parser.add_argument('--load_checkpoint',type=str2bool,default=False)
-parser.add_argument('--checkpoint_path',type=str,default='./trained_models/checkpoint.pt')
+parser.add_argument('--checkpoint_path',type=str,default='./trained_models/checkpoint')
 
 parser.add_argument('--mode',type=str,default='train',choices=['train','infer','test'])
 parser.add_argument('--load_model_path',type=str,default='./trained_models/seq2seq.pt')
@@ -57,5 +57,10 @@ def get_args():
     logger.info('__INIT__',extra=args.exec_id)
     global writer
     writer = SummaryWriter('log/'+args.exec_id['run'])
+    args.save_model_path = args.save_model_path+args.exec_id['run']+ '.pt'
+    if args.save_checkpoint:
+        args.checkpoint_path = args.checkpoint_path + args.exec_id['run'] + '.pt'
+    print('Saving/Loading checkpoint at/from:',args.checkpoint_path)
+    print('Saving model at: ',args.save_model_path)
     log_parsed_args(args)
     return args, unparsed
