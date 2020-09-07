@@ -6,10 +6,10 @@ from models.decoder import Decoder
 import random
 
 class Seq2Seq(nn.Module):
-    def __init__(self,args,vocab_sz,pad_idx, sos_idx, eos_idx):
+    def __init__(self,args,src_vocab_sz,trg_vocab_sz,pad_idx, sos_idx, eos_idx):
         super(Seq2Seq,self).__init__()
-        self.input_vocab_sz = vocab_sz
-        self.output_vocab_sz = vocab_sz
+        self.input_vocab_sz = src_vocab_sz
+        self.output_vocab_sz = trg_vocab_sz
         self.encoder = Encoder(self.input_vocab_sz,args.input_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
         self.decoder = Decoder(self.output_vocab_sz,args.output_embedding_dim,args.encoder_dim,args.decoder_dim,args.dropout)
         self.pad_idx = pad_idx
