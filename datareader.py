@@ -40,8 +40,9 @@ class DataReader(IterableDataset):
     def trg_line_mapper(self,text):
         tokens = text.strip().split()
         cmd = []
-        for token in tokens:
-            cmd.append(self.tokenizer.convert_tokens_to_ids(token.strip()))
+        for token_group in tokens:
+            for token in self.tokenizer.tokenize(token_group):
+                cmd.append(self.tokenizer.convert_tokens_to_ids(token))
             cmd.append(self.space)
         cmd = [self.tokenizer.vocab['[CLS]']] + cmd 
         cmd = cmd[:self.max_length-1]
