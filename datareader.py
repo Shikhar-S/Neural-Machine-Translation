@@ -29,7 +29,7 @@ class DataReader(IterableDataset):
         self.src_path = paths[0]
         self.trg_path = paths[1]
         self.tokenizer = tokenizer
-        self.space = len(self.tokenizer.vocab)   
+        self.space = len(self.tokenizer.vocab.keys())   
         self.padding = args.padding
         self.max_length = args.max_length
 

@@ -122,7 +122,7 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
     return epoch_loss / (batch_ctr)
 
 def translate_sentence(model,tokenizer,sentence,args):
-    space_idx = len(tokenizer.vocab)
+    space_idx = len(tokenizer.vocab.keys())
     model.eval()
     device = utils.get_device(args)
     output = tokenizer(sentence,padding='max_length',max_length=args.max_len,truncation=True)
@@ -171,7 +171,7 @@ def display_attention(candidate, translation, attention):
 def inference_mode(args):
     tokenizer = BertTokenizer.from_pretrained(args.bert_model)
     
-    VOCAB_SIZE = len(tokenizer.vocab.keys())
+    VOCAB_SIZE = len(tokenizer.vocab.keys())+1
     PAD_IDX = tokenizer.vocab['[PAD]']
     SOS_IDX = tokenizer.vocab['[CLS]']
     EOS_IDX = tokenizer.vocab['[SEP]']
