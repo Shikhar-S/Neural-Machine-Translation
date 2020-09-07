@@ -122,6 +122,7 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
     return epoch_loss / (batch_ctr)
 
 def translate_sentence(model,tokenizer,sentence,args):
+    space_idx = len(tokenizer.vocab)
     model.eval()
     device = utils.get_device(args)
     output = tokenizer(sentence,padding='max_length',max_length=args.max_len,truncation=True)
@@ -132,9 +133,18 @@ def translate_sentence(model,tokenizer,sentence,args):
  
     translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
     translation_tensor = torch.argmax(translation_tensor_logits.squeeze(1), 1)
+    
+    translation = ''
+    translation_tokens=[]
+    for token_id in translation_tensor.tolist():
+        if token_id == space_idx:
+            translation += ' '
+            translation_tokens.append(' ')
+        else:
+            token = tokenizer.convert_ids_to_tokens(token_id)
+            translation += token
+            translation_tokens.append(token)
 
-    translation = tokenizer.decode(translation_tensor.tolist(),skip_special_tokens=True,clean_up_tokenization_spaces=False)
-    translation_tokens = tokenizer.convert_ids_to_tokens(translation_tensor.tolist())
     return translation, attention, translation_tokens
 
 def display_attention(candidate, translation, attention):
@@ -184,7 +194,7 @@ def training_mode(args):
     #Get Data
     MAX_LEN = args.max_len
     tokenizer=BertTokenizer.from_pretrained(args.bert_model)
-    VOCAB_SIZE=len(tokenizer.vocab.keys())
+    VOCAB_SIZE=len(tokenizer.vocab.keys())+1 #+1 for space token
 
     training_dataset = DataReader(args,args.training_data,tokenizer)
     validation_dataset = DataReader(args,args.validation_data,tokenizer)
