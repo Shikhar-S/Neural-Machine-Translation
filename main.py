@@ -284,4 +284,5 @@ if __name__ == '__main__':
         training_mode(args)
 
     #close tensorboard writer    
-    config.writer.close()
+    if args.mode=='train':
+        config.writer.close()
