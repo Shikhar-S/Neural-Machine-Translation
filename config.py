@@ -39,6 +39,7 @@ parser.add_argument("--device",type=str,default='auto',choices=['cpu', 'gpu','au
 parser.add_argument('--exec_id',type=str2dict,default={'run': str(time.time()).replace('.','')})
 
 parser.add_argument('--training_data',type=str2tuple,default=('./Data/processed_data/train.en','./Data/processed_data/train.cmd'))
+parser.add_argument('--gen_test_translations',type=str2bool,default=False)
 parser.add_argument('--testing_data',type=str2tuple,default=('./Data/processed_data/test.en','./Data/processed_data/test.cmd'))
 parser.add_argument('--validation_data',type=str2tuple,default=('./Data/processed_data/valid.en','./Data/processed_data/valid.cmd'))
 
@@ -56,11 +57,16 @@ def get_args():
     args,unparsed = parser.parse_known_args()
     logger.info('__INIT__',extra=args.exec_id)
     global writer
-    writer = SummaryWriter('log/'+args.exec_id['run'])
-    args.save_model_path = args.save_model_path+args.exec_id['run']+ '.pt'
+    
+    
     if args.save_checkpoint:
         args.checkpoint_path = args.checkpoint_path + args.exec_id['run'] + '.pt'
-    print('Saving/Loading checkpoint at/from:',args.checkpoint_path)
-    print('Saving model at: ',args.save_model_path)
+        print('Saving/Loading checkpoint at/from:',args.checkpoint_path)
+    
+    if not args.gen_test_translations:
+        args.save_model_path = args.save_model_path+args.exec_id['run']+ '.pt'
+        writer = SummaryWriter('log/'+args.exec_id['run'])
+        print('Saving model at: ',args.save_model_path)
+
     log_parsed_args(args)
     return args, unparsed

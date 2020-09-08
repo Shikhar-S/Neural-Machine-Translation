@@ -136,14 +136,25 @@ def translate_sentence(model,tokenizer,sentence,args):
     
     translation = ''
     translation_tokens=[]
+    current_subgroup = []
+    # print(translation_tensor.tolist())
     for token_id in translation_tensor.tolist():
         if token_id == space_idx:
+            if len(current_subgroup)>0:
+                current_word = tokenizer.decode(current_subgroup).replace(" ","")
+                translation += current_word
+                # print('Current word',current_word)
+                translation_tokens.append(current_word)
             translation += ' '
+            current_subgroup = []
             translation_tokens.append(' ')
         else:
-            token = tokenizer.convert_ids_to_tokens(token_id)
-            translation += token
-            translation_tokens.append(token)
+            current_subgroup.append(token_id)
+
+    if len(current_subgroup)>0:
+        current_word = tokenizer.decode(current_subgroup)
+        translation += current_word
+        translation_tokens.append(current_word)
 
     return translation, attention, translation_tokens
 
@@ -182,13 +193,21 @@ def inference_mode(args):
     model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
 
-
-    sentence=input('Enter natural language instruction')
-    translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
-    print(translation)
-    with open(args.output_file,'w',encoding='UTF-8') as F:
-        print('Translated: ',translation,file=F)
-    #display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
+    if args.gen_test_translations:
+        print('Generating outputs...')
+        with open(args.testing_data[0],'r') as test_file,open(args.output_file,'w') as out_file:
+            for sentence in test_file:
+                translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+                print(translation,file=out_file)
+        print('Done!')
+    else:
+        while(True):
+            sentence=input('Enter natural language instruction')
+            if sentence=='exit':
+                break
+            translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+            print(translation)
+        #display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
 
 def training_mode(args):
     #Get Data
