@@ -13,8 +13,13 @@ args = arg_parser.parse_args()
 def write_to_file(split,X,Y):
     with open(args.output_dir+'/'+split+'.'+args.src_lang,'w') as src,open(args.output_dir+'/'+split+'.'+args.tgt_lang,'w') as tgt:
         for x,y in zip(X,Y):
-            print(x,file=src)
-            print(y,file=tgt)
+            try:
+                print(dt.cmd2template(y,verbose=True),file=tgt_template)
+                print(y,file = tgt_raw)
+                print(x,file=src)
+            except Exception as e:
+                untemplated.append((x,y))
+    return untemplated
 
 
 def split_data(args):
