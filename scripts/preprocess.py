@@ -17,9 +17,9 @@ def write_to_file(split,X,Y):
     with open(args.output_dir+'/'+split+'.'+args.src_lang,'w') as src,open(args.output_dir+'/'+split+'.'+args.tgt_lang+'.raw','w') as tgt_raw,open(args.output_dir+'/'+split+'.'+args.tgt_lang+'.template','w') as tgt_template:
         for x,y in zip(X,Y):
             try:
-                print(x,file=src)
                 print(dt.cmd2template(y,verbose=True),file=tgt_template)
                 print(y,file = tgt_raw)
+                print(x,file=src)
             except Exception as e:
                 untemplated.append((x,y))
     return untemplated
