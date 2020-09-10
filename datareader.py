@@ -24,28 +24,33 @@ def collator(batch):
     return (x,x_len),y
 
 class Vocab:
+    # 0 is pad , 100-102 reserved
+    # len returned on 
     def __init__(self,src_tokenizer,trg_path):
         self.path = trg_path
         self.trg_stoi = {}
         self.trg_itos = {}
         
-        self.pad = src_tokenizer.vocab['[PAD]']
-        self.sos = src_tokenizer.vocab['[CLS]']
-        self.eos = src_tokenizer.vocab['[SEP]']
+        self.pad = src_tokenizer.vocab['[PAD]'] # 0
+        self.unknown_id = src_tokenizer.vocab['[UNK]']
+        self.sos = src_tokenizer.vocab['[CLS]'] #101
+        self.eos = src_tokenizer.vocab['[SEP]'] #102
 
-        self.trg_stoi['[PAD]']=self.pad
+        self.trg_stoi['[PAD]'] = self.pad
         self.trg_stoi['[CLS]'] = self.sos
         self.trg_stoi['[SEP]'] = self.eos
+        self.trg_stoi['[UNK]'] = self.unknown_id
 
         self.trg_vocab_len = 1
         self.build_dic()
-        self.trg_vocab_len += 1
+        self.trg_vocab_len += 1 # 1 for 0 based indexing on the embedidng matrix.
+        assert self.trg_vocab_len >= 103, 'will not work correctly.'
     
     def get_id(self,token):
-        return self.trg_stoi.get(token,self.trg_vocab_len)
+        return self.trg_stoi.get(token,self.unknown_id)
     
     def get_token(self,id):
-        return self.trg_itos.get(id,'UNK')
+        return self.trg_itos.get(id,'[UNK]')
     
     def update_src_vocab(self,token):            
         self.trg_stoi[token] = self.trg_vocab_len
@@ -88,6 +93,7 @@ class DataReader(IterableDataset):
         text_tokens = text.strip().split()
         text_tokens_id = []
         for token in text_tokens:
+            token = token.strip()
             text_tokens_id.append(self.trg_tokenizer.get_id(token))
 
         text_tokens_id = [self.trg_tokenizer.sos] + text_tokens_id

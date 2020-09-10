@@ -265,6 +265,5 @@ if __name__ == '__main__':
         inference_mode(args)
     elif args.mode == 'train':
         training_mode(args)
-
-    #close tensorboard writer    
-    config.writer.close()
+        #close tensorboard writer    
+        config.writer.close()
