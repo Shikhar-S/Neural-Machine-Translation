@@ -43,14 +43,24 @@ parser.add_argument('--save_checkpoint',type=str2bool,default=True)
 parser.add_argument('--load_checkpoint',type=str2bool,default=False)
 parser.add_argument('--checkpoint_path',type=str,default='./trained_models/checkpoint.pt')
 
-parser.add_argument('--mode',type=str,default='train',choices=['train','infer','test'])
+parser.add_argument('--mode',type=str,default='train',choices=['train','infer'])
 parser.add_argument('--load_model_path',type=str,default='./trained_models/seq2seq.pt')
 parser.add_argument('--load_dic_path',type=str,default='./trained_models/dictionary.pkl')
 parser.add_argument('--max_len',type=int,default=30)
 parser.add_argument('--output_file',type=str,default='./translation_out.txt')
+parser.add_argument('--gen_test_translations',type=str2bool,default=False)
 
 def get_args():
     args,unparsed = parser.parse_known_args()
     logger.info('__INIT__',extra=args.exec_id)
+    if args.save_checkpoint and args.mode != 'infer':
+        args.checkpoint_path = args.checkpoint_path + args.exec_id['run'] + '.pt'
+        print('Saving/Loading checkpoint at/from:',args.checkpoint_path)
+    
+    if args.mode == 'train':
+        args.save_model_path = args.save_model_path+args.exec_id['run']+ '.pt'
+        writer = SummaryWriter('log/'+args.exec_id['run'])
+        print('Saving model at: ',args.save_model_path)
+
     log_parsed_args(args)
     return args, unparsed
