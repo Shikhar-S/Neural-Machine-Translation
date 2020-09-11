@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pickle
 from transformers import BertTokenizer
+from decoding_algorithm import beam_search
 
 logger = utils.get_logger()
 training_batch_ctr=0
@@ -131,11 +132,18 @@ def translate_sentence(model,tokenizer,sentence,args):
     tensor = tokenized.unsqueeze(1).to(device) 
  
     translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
-    translation_tensor = torch.argmax(translation_tensor_logits.squeeze(1), 1)
+    translation_items = beam_search(translation_tensor_logits) #list of pair of token list,scores
 
-    translation = tokenizer.decode(translation_tensor.tolist(),skip_special_tokens=True)
-    translation_tokens = tokenizer.convert_ids_to_tokens(translation_tensor.tolist())
-    return translation, attention, translation_tokens
+    translation_tokens=[]
+    translation = []
+    scores = []
+
+    for translation_list,score in translation_items:
+        translation.append(tokenizer.decode(translation_list,skip_special_tokens=True))
+        translation_tokens.append(tokenizer.convert_ids_to_tokens(translation_list))
+        scores.append(score)
+
+    return translation, attention, translation_tokens, scores
 
 def display_attention(candidate, translation, attention):
     src_len = len(candidate)
@@ -180,8 +188,8 @@ def inference_mode(args):
         print('Generating outputs...')
         with open(args.testing_data[0],'r') as test_file,open(args.output_file,'w') as out_file:
             for sentence in test_file:
-                translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
-                print(translation,file=out_file)
+                translation,attention,translation_tokens,scores = translate_sentence(model,tokenizer,sentence,args)
+                print(translation[0],file=out_file)
                 break
         print('Done!')
     else:
@@ -189,9 +197,10 @@ def inference_mode(args):
             sentence=input('Enter natural language instruction\n')
             if sentence=='exit':
                 break
-            translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+            translation,attention,translation_tokens,scores = translate_sentence(model,tokenizer,sentence,args)
             print(translation)
             print(translation_tokens)
+            print(scores)
             with open(args.output_file,'w',encoding='UTF-8') as F:
                 print('Translated: ',translation,file=F)
     #display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
