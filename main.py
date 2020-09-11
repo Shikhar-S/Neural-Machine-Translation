@@ -173,18 +173,27 @@ def inference_mode(args):
     device = utils.get_device(args)
     print('Running inference on',device)
 
-    model = Seq2Seq(args,VOCAB_SIZE,TRG_VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = Seq2Seq(args,SRC_VOCAB_SIZE,TRG_VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
-
-    while True:
-        sentence=input('Enter natural language instruction\n')
-        if sentence=='exit':
-            break
-        translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
-        print(translation)
-        print(translation_tokens)
-        with open(args.output_file,'w',encoding='UTF-8') as F:
-            print('Translated: ',translation,file=F)
+    
+    if args.gen_test_translations:
+        print('Generating outputs...')
+        with open(args.testing_data[0],'r') as test_file,open(args.output_file,'w') as out_file:
+            for sentence in test_file:
+                translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+                print(translation,file=out_file)
+                break
+        print('Done!')
+    else:
+        while True:
+            sentence=input('Enter natural language instruction\n')
+            if sentence=='exit':
+                break
+            translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
+            print(translation)
+            print(translation_tokens)
+            with open(args.output_file,'w',encoding='UTF-8') as F:
+                print('Translated: ',translation,file=F)
     #display_attention(tokenizer.tokenize(sentence),translation_tokens,attention)    
 
 def training_mode(args):
