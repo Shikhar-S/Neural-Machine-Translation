@@ -6,7 +6,7 @@ import time
 import torch.optim as optim
 import torch.nn as nn
 from datareader import DataReader, collator
-from models.bert_transformer import BertTransformer
+from models.bert_transformer import BertNMTTransformer
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 import matplotlib.pyplot as plt
@@ -152,7 +152,7 @@ def inference_mode(args):
     EOS_IDX = vocab.src_stoi['[SEP]']
     device = utils.get_device(args)
 
-    model = Seq2Seq(args,SRC_VOCAB_SIZE,TRG_VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = BertNMTTransformer(args,SRC_VOCAB_SIZE,TRG_VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
     model.load_state_dict(torch.load(args.load_model_path,map_location=torch.device(args.device)))
     
     if args.gen_test_translations:
