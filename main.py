@@ -122,13 +122,13 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
         
     return epoch_loss / (batch_ctr)
 
-def translate_sentence(model,tokenizer,sentence,args):
+def translate_sentence(model,src_tokenizer,trg_tokenizer,sentence,args):
     model.eval()
     device = utils.get_device(args)
-    output = tokenizer(sentence,padding='max_length',max_length=args.max_len,truncation=True)
+    input = src_tokenizer(sentence,padding='max_length',max_length=args.max_len,truncation=True)
 
-    tokenized = torch.LongTensor(output['input_ids'])    
-    sentence_length = torch.LongTensor([sum(output['attention_mask'])]).to(device) 
+    tokenized = torch.LongTensor(input['input_ids'])    
+    sentence_length = torch.LongTensor([sum(input['attention_mask'])]).to(device) 
     tensor = tokenized.unsqueeze(1).to(device) 
  
     translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
@@ -139,8 +139,14 @@ def translate_sentence(model,tokenizer,sentence,args):
     scores = []
 
     for translation_list,score in translation_items:
-        translation.append(tokenizer.decode(translation_list,skip_special_tokens=True))
-        translation_tokens.append(tokenizer.convert_ids_to_tokens(translation_list))
+        current_tokens = []
+
+        for token_id in translation_list:
+            token = trg_tokenizer.get_token(token_id)
+            current_tokens.append(token)
+
+        translation.append(" ".join(current_tokens))
+        translation_tokens.append(current_tokens)
         scores.append(score)
 
     return translation, attention, translation_tokens, scores
@@ -188,7 +194,7 @@ def inference_mode(args):
         print('Generating outputs...')
         with open(args.testing_data[0],'r') as test_file,open(args.output_file,'w') as out_file:
             for sentence in test_file:
-                translation,attention,translation_tokens,scores = translate_sentence(model,tokenizer,sentence,args)
+                translation,attention,translation_tokens,scores = translate_sentence(model,tokenizer,trg_tokenizer,sentence,args)
                 print(translation[0],file=out_file)
                 break
         print('Done!')
@@ -197,7 +203,7 @@ def inference_mode(args):
             sentence=input('Enter natural language instruction\n')
             if sentence=='exit':
                 break
-            translation,attention,translation_tokens,scores = translate_sentence(model,tokenizer,sentence,args)
+            translation,attention,translation_tokens,scores = translate_sentence(model,tokenizer,trg_tokenizer,sentence,args)
             print(translation)
             print(translation_tokens)
             print(scores)
