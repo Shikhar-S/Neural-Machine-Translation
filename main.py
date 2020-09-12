@@ -74,7 +74,8 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             config.writer.add_scalar('Batch Training PPL',math.exp(av_loss),training_batch_ctr)
         batch_ctr+=1
         training_batch_ctr+=1
-    return epoch_loss / (batch_ctr), tboard_dic
+        
+    return epoch_loss / (batch_ctr)
 
 def evaluate(model, iterator, criterion, args,log_tb=True):
     if log_tb:
@@ -115,6 +116,7 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
                 config.writer.add_scalar('Batch Validation loss',av_loss,valid_batch_ctr)
                 config.writer.add_scalar('Batch Validation PPL',math.exp(av_loss),valid_batch_ctr)
                 valid_batch_ctr+=1
+            
 
         
     return epoch_loss / (batch_ctr)
@@ -171,7 +173,7 @@ def inference_mode(args):
             for sentence in test_file:
                 translation,attention,translation_tokens = translate_sentence(model,tokenizer,sentence,args)
                 print(translation,file=out_file)
-                break
+                
         print('Done!')
     else:
         while True:
@@ -245,6 +247,7 @@ def training_mode(args):
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
         print('-----------------------------------------')
+        
 
 if __name__ == '__main__':
     args,unparsed = config.get_args()
