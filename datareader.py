@@ -11,17 +11,17 @@ def collator(batch):
     #print(batch)
     x=[]
     y=[]
-    x_len=[]
+    x_mask=[]
     for item_x,item_y in batch:
         x.append(item_x['input_ids'])
         y.append(item_y['input_ids'])
-        x_len.append(sum(item_x['attention_mask']))  #attention mask has 1 for unpadded token
+        x_mask.append(item_x['attention_mask'])  
     
-    x_len = torch.tensor(x_len,dtype=torch.long).contiguous()
+    x_mask = torch.Tensor(x_mask).permute(1,0).contiguous()
     x = torch.tensor(x,dtype=torch.long).permute(1,0).contiguous()
     y = torch.tensor(y,dtype=torch.long).permute(1,0).contiguous()
 
-    return (x,x_len),y
+    return (x,x_mask),y
 
 
 class DataReader(IterableDataset):

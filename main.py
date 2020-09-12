@@ -38,15 +38,14 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
         torch.cuda.empty_cache()
         # print('Allocated',torch.cuda.memory_allocated())
         # print('Cached',torch.cuda.memory_cached())
-        src, src_len = batch[0]
+        src, src_pad_mask = batch[0]
         trg = batch[1]
         src=src.to(device)
-        src_len=src_len.to(device)
+        src_pad_mask=src_pad_mask.to(device)
         trg = trg.to(device)
         
         optimizer.zero_grad()
-        
-        output, _ = model(src, src_len, trg)
+        output = model(src)
         #trg = [trg sent len, batch size]
         #output = [trg sent len, batch size, output dim]
         
@@ -89,14 +88,14 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
     
         for batch in tqdm(iterator):
 
-            src, src_len = batch[0]
+            src, src_pad_mask = batch[0]
             trg = batch[1]
-
             src=src.to(device)
-            src_len=src_len.to(device)
+            src_pad_mask=src_pad_mask.to(device)
             trg = trg.to(device)
 
-            output, _ = model(src, src_len, trg, 0) #turn off teacher forcing
+            output = model(src) 
+            print(output.shape)
 
             #trg = [trg sent len, batch size]
             #output = [trg sent len, batch size, output dim]
@@ -190,23 +189,21 @@ def training_mode(args):
     #Get Data
     MAX_LEN = args.max_len
     tokenizer=BertTokenizer.from_pretrained(args.bert_model)
-    VOCAB_SIZE=len(tokenizer.vocab.keys())
 
     training_dataset = DataReader(args,args.training_data,tokenizer)
     validation_dataset = DataReader(args,args.validation_data,tokenizer)
     
+    INP_VOCAB_SIZE = len(tokenizer.vocab) 
+    OUTP_VOCAB_SIZE = len(tokenizer.vocab)
+    PAD_IDX = tokenizer.vocab['[PAD]']
 
     device = utils.get_device(args)
 
-    PAD_IDX = tokenizer.vocab['[PAD]']
-    SOS_IDX = tokenizer.vocab['[CLS]']
-    EOS_IDX = tokenizer.vocab['[SEP]']
-    
     training_dataloader = DataLoader(training_dataset, batch_size = args.batch, drop_last=True, collate_fn=collator)
     validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=collator)
 
     #Get model
-    model = Seq2Seq(args,VOCAB_SIZE, PAD_IDX, SOS_IDX, EOS_IDX).to(device)
+    model = BertNMTTransformer(INP_VOCAB_SIZE, OUTP_VOCAB_SIZE, args.d_model,args.n_head,args.n_encoder_layers,args.n_decoder_layers,args.dim_feedfwd,args.dropout,bert_on=args.bertinit).to(device)
     logger.info(model.apply(utils.init_weights),extra=args.exec_id) #init model
     logger.info("Number of trainable parameters: "+str(utils.count_parameters(model)),extra=args.exec_id) #log Param count
 
@@ -242,8 +239,6 @@ def training_mode(args):
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), args.save_model_path)
-            with open(args.save_dic_path,'wb') as F:
-                pickle.dump(tokenizer.vocab,F)
         
         config.writer.add_scalars('Epoch losses',{'Epoch training loss':train_loss,'Epoch Validation loss':valid_loss},epoch)
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')

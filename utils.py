@@ -2,7 +2,7 @@ import logging
 import torch
 import torch.nn as nn
 
-def get_logger(name=__file__, level=logging.INFO,filename='log/seq_to_seq.log'):    
+def get_logger(name=__file__, level=logging.INFO,filename='log/transformer.log'):    
     logger = logging.getLogger(name)
 
     if getattr(logger, '_init_done__', None):

@@ -34,10 +34,11 @@ parser.add_argument('--truncation',type=str2bool,default=True)
 
 parser.add_argument("--d_model",type=int,default=512)
 parser.add_argument("--n_encoder_layers",type=int,default=6)
-parser.add_argument("--n_heads",type=int,default=8)
-parser.add_argument("--n_decoder_layers ",type=int,default=6)
+parser.add_argument("--n_head",type=int,default=8)
+parser.add_argument("--n_decoder_layers",type=int,default=6)
 parser.add_argument("--dim_feedfwd",type=int,default=2048)
 parser.add_argument("--dropout",type=float,default=0.1)
+parser.add_argument('--bertinit',type=str2bool,default=False)
 
 parser.add_argument("--device",type=str,default='auto',choices=['cpu', 'gpu','auto'])
 parser.add_argument('--exec_id',type=str2dict,default={'run': str(time.time()).replace('.','')})
@@ -65,6 +66,7 @@ def get_args():
         print('Saving/Loading checkpoint at/from:',args.checkpoint_path)
     
     if args.mode == 'train':
+        global writer
         args.save_model_path = args.save_model_path+args.exec_id['run']+ '.pt'
         writer = SummaryWriter('log/'+args.exec_id['run'])
         print('Saving model at: ',args.save_model_path)
