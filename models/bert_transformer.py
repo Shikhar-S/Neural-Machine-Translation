@@ -1,34 +1,54 @@
 import torch
 import torch.nn as nn
-from bert_decoder import BertNMTDecoder,BertNMTDecoderLayer
-from bert_encoder import BertNMTEncoder,BertNMTEncoderLayer
+from models.bert_decoder import BertNMTDecoder,BertNMTDecoderLayer
+from models.bert_encoder import BertNMTEncoder,BertNMTEncoderLayer
+from models.positional_encoding import PositionalEncoding
+import math
 
 class BertNMTTransformer(nn.Transformer):
-    def __init__(self, d_model = 512, nhead = 8, num_encoder_layers = 6,num_decoder_layers = 6, dim_feedforward = 2048, dropout = 0.1,activation = "relu", bert_on = False):
+    def __init__(self, input_vocab_sz, output_vocab_sz ,d_model = 512, nhead = 8, num_encoder_layers = 6,num_decoder_layers = 6, dim_feedforward = 2048, dropout = 0.1,activation = "relu", bert_on = False):
         self.bert_on = bert_on
+
         if self.bert_on:
             custom_encoder = BertNMTEncoderLayer(d_model, nhead, dim_feedforward,dropout,activation)
             custom_decoder = BertNMTDecoderLayer(d_model, nhead, dim_feedforward,dropout,activation)
             self.encoder = BertNMTEncoder(custom_encoder,num_encoder_layers)
             self.decoder = BertNMTDecoder(custom_decoder,num_decoder_layers)
             self._reset_parameters()
-            self.d_model = d_model
             self.nhead = nhead
         else:
-            super(BertTransformer, self).__init__(d_model,nhead,num_encoder_layers,num_decoder_layers,dim_feedforward,dropout,activation,custom_encoder,custom_decoder)
+            super(BertNMTTransformer, self).__init__(d_model,nhead,dim_feedforward=dim_feedforward,dropout=dropout)
 
-    def forward(self, src, tgt, bert_encoding, src_mask = None, tgt_mask = None, memory_mask = None, src_key_padding_mask = None, tgt_key_padding_mask = None, memory_key_padding_mask = None):
+        self.decoder_trg_mask = None
+        self.pos_encoder = PositionalEncoding(d_model, dropout)
+        self.input_encoder = nn.Embedding(input_vocab_sz, d_model)
+        self.d_model = d_model
+        self.output_decoder = nn.Linear(d_model, output_vocab_sz)
+
         
+
+    def forward(self, src, bert_encoding=None):
+        
+        #create source mask on first forward mask/size mismatch with current mask
+        if self.decoder_trg_mask is None or self.decoder_trg_mask.size(0) != len(src):
+            device = src.device
+            mask = self.generate_square_subsequent_mask(len(src)).to(device)
+            self.decoder_trg_mask = mask
+
+        #use positional embedding and embedding layer on source sentence.
+        src = self.input_encoder(src) * math.sqrt(self.d_model)
+        src = self.pos_encoder(src)
+
         if not self.bert_on:
-            return super().forward(src, tgt, bert_encoding, src_mask , tgt_mask , memory_mask , src_key_padding_mask , tgt_key_padding_mask , memory_key_padding_mask )
+            output = super().forward(src, src, tgt_mask = self.decoder_trg_mask)
+            output = self.output_decoder(output)
+            return output
 
-        if src.size(1) != tgt.size(1):
-            raise RuntimeError("the batch number of src and tgt must be equal")
+        else:
+            #bert initialised
+            memory = self.encoder(src, bert_encoding)
+            output = self.decoder(src, memory, bert_encoding, tgt_mask=self.decoder_trg_mask)
+            output = self.output_decoder(output)
 
-        if src.size(2) != self.d_model or tgt.size(2) != self.d_model:
-            raise RuntimeError("the feature number of src and tgt must be equal to d_model")
-
-        memory = self.encoder(src, bert_encoding, mask=src_mask, src_key_padding_mask=src_key_padding_mask)
-        output = self.decoder(tgt, memory, bert_encoding, tgt_mask=tgt_mask, memory_mask=memory_mask,tgt_key_padding_mask=tgt_key_padding_mask,memory_key_padding_mask=memory_key_padding_mask)
-        return output
+            return output
 

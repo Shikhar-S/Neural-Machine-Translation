@@ -6,7 +6,7 @@ class BertNMTEncoderLayer(nn.TransformerEncoderLayer):
         super(BertNMTEncoderLayer, self).__init__(d_model,nhead,dim_feedforward,dropout,activation)
         self.bert_attn = MultiheadAttention(d_model, nhead, dropout=dropout)
 
-     def forward(self, src, bert_encoding, src_mask = None, src_key_padding_mask = None):
+    def forward(self, src, bert_encoding, src_mask = None, src_key_padding_mask = None):
         bert_attended = self.bert_attn(src, bert_encoding,bert_encoding)[0]
         src_attended = self.self_attn(src, src, src, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
         src2 = 0.5 * (bert_attended + src_attended)
