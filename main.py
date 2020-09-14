@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pickle
 from transformers import BertTokenizer
+from utils import plot_grad_flow,plot_grad_flow_v2
 
 logger = utils.get_logger()
 training_batch_ctr=0
@@ -56,7 +57,11 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
         
         loss = criterion(output, trg)
         loss.backward()
+        
+        
+
         torch.nn.utils.clip_grad_norm_(model.parameters(), clip)
+
         
         optimizer.step()
         epoch_loss += loss.item()
@@ -214,7 +219,7 @@ def training_mode(args):
     CLIP = 1
     best_valid_loss = float('inf')
 
-    optimizer = optim.Adam(model.parameters())
+    optimizer = optim.Adam(model.parameters(),lr=1e-6)
     #optimizer = optim.SGD(model.parameters(),lr=0.01)
     criterion = nn.CrossEntropyLoss(ignore_index = PAD_IDX)
     
