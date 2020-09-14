@@ -47,13 +47,13 @@ parser.add_argument('--training_data',type=str2tuple,default=('./Data/processed_
 parser.add_argument('--testing_data',type=str2tuple,default=('./Data/processed_data/test.en','./Data/processed_data/test.cmd.template'))
 parser.add_argument('--validation_data',type=str2tuple,default=('./Data/processed_data/valid.en','./Data/processed_data/valid.cmd.template'))
 
-parser.add_argument('--save_model_path',type=str,default='./trained_models/seq2seq')
+parser.add_argument('--save_model_path',type=str,default='./trained_models/transformer')
 parser.add_argument('--save_checkpoint',type=str2bool,default=True)
 parser.add_argument('--load_checkpoint',type=str2bool,default=False)
-parser.add_argument('--checkpoint_path',type=str,default='./trained_models/checkpoint')
+parser.add_argument('--checkpoint_path',type=str,default='./trained_models/chkpt_transformer')
 
 parser.add_argument('--mode',type=str,default='train',choices=['train','infer'])
-parser.add_argument('--load_model_path',type=str,default='./trained_models/seq2seq.pt')
+parser.add_argument('--load_model_path',type=str,default='./trained_models/transformer.pt')
 parser.add_argument('--max_len',type=int,default=30)
 parser.add_argument('--output_file',type=str,default='./translation_out.txt')
 parser.add_argument('--gen_test_translations',type=str2bool,default=False)
