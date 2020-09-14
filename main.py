@@ -101,7 +101,6 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
             trg = trg.to(device)
 
             output = model(src) 
-            print(output.shape)
 
             #trg = [trg sent len, batch size]
             #output = [trg sent len, batch size, output dim]
