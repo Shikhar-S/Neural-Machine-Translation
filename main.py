@@ -218,7 +218,7 @@ def training_mode(args):
     CLIP = 1
     best_valid_loss = float('inf')
 
-    optimizer = optim.Adam(model.parameters(),lr=1e-6)
+    optimizer = optim.Adam(model.parameters(),lr=args.lr)
     #optimizer = optim.SGD(model.parameters(),lr=0.01)
     criterion = nn.CrossEntropyLoss(ignore_index = PAD_IDX)
     
