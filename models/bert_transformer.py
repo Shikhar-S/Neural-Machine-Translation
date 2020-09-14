@@ -6,7 +6,7 @@ from models.positional_encoding import PositionalEncoding
 import math
 
 class BertNMTTransformer(nn.Transformer):
-    def __init__(self, input_vocab_sz, output_vocab_sz ,d_model = 512, nhead = 8, num_encoder_layers = 6,num_decoder_layers = 6, dim_feedforward = 2048, dropout = 0.1,activation = "relu", bert_on = False):
+    def __init__(self, input_vocab_sz, output_vocab_sz ,d_model = 512, nhead = 8, num_encoder_layers = 6,num_decoder_layers = 6, dim_feedforward = 2048, dropout = 0.1,activation = "gelu", bert_on = False):
         self.bert_on = bert_on
 
         if self.bert_on:
@@ -17,7 +17,7 @@ class BertNMTTransformer(nn.Transformer):
             self._reset_parameters()
             self.nhead = nhead
         else:
-            super(BertNMTTransformer, self).__init__(d_model,nhead,dim_feedforward=dim_feedforward,dropout=dropout)
+            super(BertNMTTransformer, self).__init__(d_model,nhead,dim_feedforward=dim_feedforward,dropout=dropout,activation=activation)
 
         self.decoder_trg_mask = None
         self.pos_encoder = PositionalEncoding(d_model, dropout)
