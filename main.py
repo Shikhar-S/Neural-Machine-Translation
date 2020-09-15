@@ -1,10 +1,16 @@
 import math
+#Make directories needed for running in guild run folder
+import os
+print('Current run folder : ',os.getcwd())
+os.makedirs(os.path.join(os.getcwd(),'tblogs/'),exist_ok=True)
+os.makedirs(os.path.join(os.getcwd(),'trained_models/'),exist_ok=True)
+#########################################################################
 import utils
-import config
 import torch
 import time
 import torch.optim as optim
 import torch.nn as nn
+from torch.utils.tensorboard import SummaryWriter
 from datareader import DataReader, collator
 from models.bert_transformer import BertNMTTransformer
 from torch.utils.data import DataLoader
@@ -13,11 +19,83 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 import pickle
 from transformers import BertTokenizer
-from utils import plot_grad_flow,plot_grad_flow_v2
 
+#-------------------------------------------------------------------------------------------------
+import argparse
+
+
+writer = None
 logger = utils.get_logger()
-training_batch_ctr=0
-valid_batch_ctr=0
+
+def str2bool(v):
+    return v.lower() in ('true')
+
+def str2dict(v):
+    return {'run': str(v) }
+
+def str2tuple(v):
+    v = v.split('`!`!`')
+    return (v[0],v[1])
+
+def log_parsed_args(args):
+    for arg, value in sorted(vars(args).items()):
+        logger.info("Argument %s: %r", arg, value, extra=args.exec_id)
+
+parser = argparse.ArgumentParser()
+parser.add_argument("--batch",type=int,default=32)
+parser.add_argument("--epochs",type=int,default=10)
+parser.add_argument("--lr",type=float,default=1e-4)
+
+parser.add_argument("--bert_model",default='bert-base-cased')
+parser.add_argument('--padding',default='max_length')
+parser.add_argument('--truncation',type=str2bool,default=True)
+
+parser.add_argument("--d_model",type=int,default=512)
+parser.add_argument("--n_encoder_layers",type=int,default=6)
+parser.add_argument("--n_head",type=int,default=8)
+parser.add_argument("--n_decoder_layers",type=int,default=6)
+parser.add_argument("--dim_feedfwd",type=int,default=2048)
+parser.add_argument("--dropout",type=float,default=0.1)
+parser.add_argument('--bertinit',type=str2bool,default=False)
+
+parser.add_argument("--device",type=str,default='auto',choices=['cpu', 'gpu','auto'])
+parser.add_argument('--exec_id',type=str2dict,default={'run': '_guild_' + str(time.time()).replace('.','')})
+
+parser.add_argument('--training_data',type=str2tuple,default=('./Data/processed_data/train.en','./Data/processed_data/train.cmd.template'))
+parser.add_argument('--testing_data',type=str2tuple,default=('./Data/processed_data/test.en','./Data/processed_data/test.cmd.template'))
+parser.add_argument('--validation_data',type=str2tuple,default=('./Data/processed_data/valid.en','./Data/processed_data/valid.cmd.template'))
+
+parser.add_argument('--save_model_path',type=str,default='./trained_models/transformer')
+parser.add_argument('--trg_vocab_path',type=str,default='./trained_models/transformer_dic.pickle')
+
+parser.add_argument('--save_checkpoint',type=str2bool,default=False)
+parser.add_argument('--load_checkpoint',type=str2bool,default=False)
+parser.add_argument('--checkpoint_path',type=str,default='./trained_models/chkpt_transformer')
+
+parser.add_argument('--mode',type=str,default='train',choices=['train','infer'])
+parser.add_argument('--load_model_path',type=str,default='./trained_models/transformer.pt')
+parser.add_argument('--max_len',type=int,default=30)
+parser.add_argument('--output_file',type=str,default='./translation_out.txt')
+parser.add_argument('--gen_test_translations',type=str2bool,default=False)
+
+def get_args():
+    args,unparsed = parser.parse_known_args()
+    if args.save_checkpoint and args.mode != 'infer':
+        args.checkpoint_path = args.checkpoint_path + args.exec_id['run'] + '.pt'
+        print('Saving/Loading checkpoint at/from:',args.checkpoint_path)
+    
+    if args.mode == 'train':
+        args.save_model_path = args.save_model_path+args.exec_id['run']+ '.pt'
+        writer = SummaryWriter('tblogs/'+args.exec_id['run'])
+        print('Saving model at: ',args.save_model_path)
+
+    log_parsed_args(args)
+    return args, unparsed
+
+#-----------------------------------------------------------------------------------------------
+
+training_batch_ctr = 0
+valid_batch_ctr = 0
 
 def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=None):
     global training_batch_ctr
@@ -75,8 +153,8 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             'epoch_loss': epoch_loss,
             }, args.checkpoint_path)
             av_loss=epoch_loss/(batch_ctr+1)
-            config.writer.add_scalar('Batch Training loss',av_loss,training_batch_ctr)
-            config.writer.add_scalar('Batch Training PPL',math.exp(av_loss),training_batch_ctr)
+            writer.add_scalar('Batch Training loss',av_loss,training_batch_ctr)
+            writer.add_scalar('Batch Training PPL',math.exp(av_loss),training_batch_ctr)
         batch_ctr+=1
         training_batch_ctr+=1
         
@@ -117,8 +195,8 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
             batch_ctr+=1
             if log_tb:
                 av_loss = epoch_loss/(batch_ctr)
-                config.writer.add_scalar('Batch Validation loss',av_loss,valid_batch_ctr)
-                config.writer.add_scalar('Batch Validation PPL',math.exp(av_loss),valid_batch_ctr)
+                writer.add_scalar('Batch Validation loss',av_loss,valid_batch_ctr)
+                writer.add_scalar('Batch Validation PPL',math.exp(av_loss),valid_batch_ctr)
                 valid_batch_ctr+=1
             
 
@@ -205,7 +283,6 @@ def training_mode(args):
 
     TRG_VOCAB_SIZE = training_dataset.trg_tokenizer.trg_vocab_len
     SRC_VOCAB_SIZE = len(src_tokenizer.vocab)
-    print(SRC_VOCAB_SIZE,TRG_VOCAB_SIZE) 
     PAD_IDX = src_tokenizer.vocab['[PAD]']
 
     device = utils.get_device(args)
@@ -251,7 +328,7 @@ def training_mode(args):
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), args.save_model_path)
         
-        config.writer.add_scalars('Epoch losses',{'Epoch training loss':train_loss,'Epoch Validation loss':valid_loss},epoch)
+        writer.add_scalars('Epoch losses',{'Epoch training loss':train_loss,'Epoch Validation loss':valid_loss},epoch)
         print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
         print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
         print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
@@ -259,7 +336,7 @@ def training_mode(args):
         
 
 if __name__ == '__main__':
-    args,unparsed = config.get_args()
+    args,unparsed = get_args()
     if len(unparsed)>0:
         logger.warning('Unparsed args: %s',unparsed)
     
@@ -268,4 +345,4 @@ if __name__ == '__main__':
     elif args.mode == 'train':
         training_mode(args)
         #close tensorboard writer    
-        config.writer.close()
+        writer.close()
