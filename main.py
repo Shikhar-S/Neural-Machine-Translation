@@ -194,14 +194,19 @@ def inference_mode(args):
 def training_mode(args):
     #Get Data
     MAX_LEN = args.max_len
-    tokenizer=BertTokenizer.from_pretrained(args.bert_model)
+    src_tokenizer=BertTokenizer.from_pretrained(args.bert_model)
 
-    training_dataset = DataReader(args,args.training_data,tokenizer)
-    validation_dataset = DataReader(args,args.validation_data,tokenizer)
     
-    INP_VOCAB_SIZE = len(tokenizer.vocab) 
-    OUTP_VOCAB_SIZE = len(tokenizer.vocab)
-    PAD_IDX = tokenizer.vocab['[PAD]']
+    training_dataset = DataReader(args,args.training_data,src_tokenizer)
+    with open(args.trg_vocab_path,'wb') as f:
+        pickle.dump(training_dataset.trg_tokenizer,f)
+    
+    validation_dataset = DataReader(args,args.validation_data,src_tokenizer,trg_tokenizer = training_dataset.trg_tokenizer)
+
+    TRG_VOCAB_SIZE = training_dataset.trg_tokenizer.trg_vocab_len
+    SRC_VOCAB_SIZE = len(src_tokenizer.vocab)
+    print(SRC_VOCAB_SIZE,TRG_VOCAB_SIZE) 
+    PAD_IDX = src_tokenizer.vocab['[PAD]']
 
     device = utils.get_device(args)
 
@@ -209,7 +214,7 @@ def training_mode(args):
     validation_dataloader = DataLoader(validation_dataset,batch_size = args.batch, drop_last=True, collate_fn=collator)
 
     #Get model
-    model = BertNMTTransformer(INP_VOCAB_SIZE, OUTP_VOCAB_SIZE, args.d_model,args.n_head,args.n_encoder_layers,args.n_decoder_layers,args.dim_feedfwd,args.dropout,bert_on=args.bertinit).to(device)
+    model = BertNMTTransformer(SRC_VOCAB_SIZE, TRG_VOCAB_SIZE, args.d_model,args.n_head,args.n_encoder_layers,args.n_decoder_layers,args.dim_feedfwd,args.dropout,bert_on=args.bertinit).to(device)
     logger.info(model.apply(utils.init_weights),extra=args.exec_id) #init model
     logger.info("Number of trainable parameters: "+str(utils.count_parameters(model)),extra=args.exec_id) #log Param count
 

@@ -49,6 +49,8 @@ parser.add_argument('--testing_data',type=str2tuple,default=('./Data/processed_d
 parser.add_argument('--validation_data',type=str2tuple,default=('./Data/processed_data/valid.en','./Data/processed_data/valid.cmd.template'))
 
 parser.add_argument('--save_model_path',type=str,default='./trained_models/transformer')
+parser.add_argument('--trg_vocab_path',type=str,default='./trained_models/transformer_dic.pickle')
+
 parser.add_argument('--save_checkpoint',type=str2bool,default=True)
 parser.add_argument('--load_checkpoint',type=str2bool,default=False)
 parser.add_argument('--checkpoint_path',type=str,default='./trained_models/chkpt_transformer')
