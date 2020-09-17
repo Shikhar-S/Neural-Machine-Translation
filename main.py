@@ -132,7 +132,7 @@ def translate_sentence(model,src_tokenizer,trg_tokenizer,sentence,args):
     tensor = tokenized.unsqueeze(1).to(device) 
  
     translation_tensor_logits, attention = model(tensor, sentence_length, None,teacher_forcing_ratio=0) 
-    translation_items = beam_search(translation_tensor_logits) #list of pair of token list,scores
+    translation_items = beam_search(translation_tensor_logits[1:]) #list of pair of token list,scores
 
     translation_tokens=[]
     translation = []
