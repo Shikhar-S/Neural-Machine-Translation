@@ -10,7 +10,6 @@ import torch
 import time
 import torch.optim as optim
 import torch.nn as nn
-from torch.utils.tensorboard import SummaryWriter
 from datareader import DataReader, collator
 from models.bert_transformer import BertNMTTransformer
 from torch.utils.data import DataLoader
@@ -24,7 +23,6 @@ from transformers import BertTokenizer
 import argparse
 
 
-writer = None
 logger = utils.get_logger()
 
 def str2bool(v):
@@ -86,8 +84,6 @@ def get_args():
     
     if args.mode == 'train':
         args.save_model_path = args.save_model_path+args.exec_id['run']+ '.pt'
-        writer = SummaryWriter('tblogs/'+args.exec_id['run'])
-        print('Saving model at: ',args.save_model_path)
 
     log_parsed_args(args)
     return args, unparsed
@@ -153,8 +149,6 @@ def train(model, iterator, epoch, optimizer, criterion, clip, args,checkpoint=No
             'epoch_loss': epoch_loss,
             }, args.checkpoint_path)
             av_loss=epoch_loss/(batch_ctr+1)
-            writer.add_scalar('Batch Training loss',av_loss,training_batch_ctr)
-            writer.add_scalar('Batch Training PPL',math.exp(av_loss),training_batch_ctr)
         batch_ctr+=1
         training_batch_ctr+=1
         
@@ -195,8 +189,6 @@ def evaluate(model, iterator, criterion, args,log_tb=True):
             batch_ctr+=1
             if log_tb:
                 av_loss = epoch_loss/(batch_ctr)
-                writer.add_scalar('Batch Validation loss',av_loss,valid_batch_ctr)
-                writer.add_scalar('Batch Validation PPL',math.exp(av_loss),valid_batch_ctr)
                 valid_batch_ctr+=1
             
 
@@ -314,6 +306,9 @@ def training_mode(args):
         start_epoch = checkpoint['epoch']
 
 
+    train_loss_at_best_v=float('inf')
+    final_train_loss=float('inf')
+
     for epoch in range(start_epoch,N_EPOCHS): 
         start_time = time.time()
         
@@ -327,12 +322,17 @@ def training_mode(args):
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
             torch.save(model.state_dict(), args.save_model_path)
+            train_loss_at_best_v = train_loss
         
-        writer.add_scalars('Epoch losses',{'Epoch training loss':train_loss,'Epoch Validation loss':valid_loss},epoch)
-        print(f'Epoch: {epoch+1:02} | Time: {epoch_mins}m {epoch_secs}s')
-        print(f'\tTrain Loss: {train_loss:.3f} | Train PPL: {math.exp(train_loss):7.3f}')
-        print(f'\t Val. Loss: {valid_loss:.3f} |  Val. PPL: {math.exp(valid_loss):7.3f}')
+        print(f'Epoch : {epoch+1:02} | Time : {epoch_mins}m {epoch_secs}s')
+        print(f'\tTrain Loss : {train_loss:.3f} | Train PPL : {math.exp(train_loss):7.3f}')
+        print(f'\t Val. Loss : {valid_loss:.3f} |  Val. PPL : {math.exp(valid_loss):7.3f}')
+        final_train_loss=train_loss
         print('-----------------------------------------')
+
+    print('best_valid_loss:',best_valid_loss)
+    print('final_train_loss:',final_train_loss)
+    print('train_loss_best_v:',train_loss_at_best_v)
         
 
 if __name__ == '__main__':
@@ -345,4 +345,3 @@ if __name__ == '__main__':
     elif args.mode == 'train':
         training_mode(args)
         #close tensorboard writer    
-        writer.close()

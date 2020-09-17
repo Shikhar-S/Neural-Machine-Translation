@@ -4,7 +4,7 @@
       description: Transformer Grid Searching script
       main: main
       flags-import: all
-      flags-import-skip: [ bert_model,padding,truncation,bertinit,exec_id,training_data,testing_data,validation_data,save_model_path,trg_vocab_path,save_checkpoint,load_checkpoint,checkpoint_path,mode,load_model_path,output_file,gen_test_translations ]
+      flags-import-skip: [device, bert_model,padding,truncation,bertinit,exec_id,training_data,testing_data,validation_data,save_model_path,trg_vocab_path,save_checkpoint,load_checkpoint,checkpoint_path,mode,load_model_path,output_file,gen_test_translations ]
       output-scalars: '(\key): (\value)'
       requires:
         - file: ./Data      # inline resource
