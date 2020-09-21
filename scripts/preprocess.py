@@ -13,13 +13,29 @@ arg_parser.add_argument('--bert_model')
 args = arg_parser.parse_args()
 
 def write_to_file(split,X,Y):
-    untemplated = [] 
-    with open(args.output_dir+'/'+split+'.'+args.src_lang,'w') as src,open(args.output_dir+'/'+split+'.'+args.tgt_lang+'.raw','w') as tgt_raw,open(args.output_dir+'/'+split+'.'+args.tgt_lang+'.template','w') as tgt_template:
+    untemplated = []
+    with open(args.output_dir+'/'+split+'.'+args.src_lang,'w') as src,open(args.output_dir+'/'+split+'.'+args.tgt_lang+'.raw','w') as tgt_raw,open(args.output_dir+'/'+split+'.'+args.tgt_lang+'.util','w') as tgt_util:
         for x,y in zip(X,Y):
             try:
-                print(dt.cmd2template(y,verbose=True),file=tgt_template)
+                result = []
+                parse_tree = dt.bash_parser(y)
+                piped_commands = y.split('|')
+                total_utility_set = dt.get_utilities(dt.bash_parser(y))
+                for command in piped_commands:
+                    command=command.strip()
+                    command_tokens = command.split(' ')
+                    if command_tokens[0].strip() =='sudo':
+                        command_token= command_tokens[1].strip()
+                    else:
+                        command_token= command_tokens[0].strip()
+                    if command_token in total_utility_set:
+                        result.append(command_token)
+                if len(result)<1:
+                    continue
+                print(" ".join(result),file = tgt_util)
                 print(y,file = tgt_raw)
                 print(x,file=src)
+                
             except Exception as e:
                 untemplated.append((x,y))
     return untemplated
