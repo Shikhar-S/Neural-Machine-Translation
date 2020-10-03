@@ -192,11 +192,14 @@ def inference_mode(args):
     
     if args.gen_test_translations:
         print('Generating outputs...')
+        ctr=0
         with open(args.testing_data[0],'r') as test_file,open(args.output_file,'w') as out_file:
             for sentence in test_file:
                 translation,attention,translation_tokens,scores = translate_sentence(model,tokenizer,trg_tokenizer,sentence,args)
                 print(translation[0],file=out_file)
-                break
+                ctr+=1
+                if ctr%1000==0:
+                    print('Translated',ctr)
         print('Done!')
     else:
         while True:
